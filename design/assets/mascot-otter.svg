@@ -1,0 +1,33 @@
+<svg width="220" height="220" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Otter mascot">
+  <defs>
+    <linearGradient id="fur" x1="0" x2="1">
+      <stop offset="0%" stop-color="#8D6E63"/>
+      <stop offset="100%" stop-color="#6D4C41"/>
+    </linearGradient>
+  </defs>
+  <circle cx="110" cy="110" r="108" fill="#E3F5FF"/>
+  <!-- body -->
+  <ellipse cx="110" cy="130" rx="60" ry="70" fill="url(#fur)"/>
+  <!-- head -->
+  <circle cx="110" cy="90" r="48" fill="url(#fur)"/>
+  <!-- belly -->
+  <ellipse cx="110" cy="155" rx="35" ry="45" fill="#F5E6D3"/>
+  <!-- muzzle -->
+  <ellipse cx="110" cy="105" rx="28" ry="18" fill="#F5E6D3"/>
+  <!-- nose -->
+  <path d="M110 100c6 0 10 4 10 7s-6 5-10 5-10-2-10-5 4-7 10-7z" fill="#333"/>
+  <!-- eyes -->
+  <circle cx="92" cy="88" r="6" fill="#222"/>
+  <circle cx="128" cy="88" r="6" fill="#222"/>
+  <!-- whiskers -->
+  <path d="M82 106h18M80 112h20M122 106h18M120 112h20" stroke="#222" stroke-width="2" stroke-linecap="round"/>
+  <!-- cheeks -->
+  <circle cx="92" cy="112" r="5" fill="#FF9AA2" opacity="0.7"/>
+  <circle cx="128" cy="112" r="5" fill="#FF9AA2" opacity="0.7"/>
+  <!-- wave paw -->
+  <circle cx="160" cy="120" r="16" fill="url(#fur)"/>
+  <circle cx="160" cy="120" r="10" fill="#F5E6D3"/>
+  <!-- subtle shine -->
+  <circle cx="96" cy="84" r="2" fill="#fff"/>
+  <circle cx="132" cy="84" r="2" fill="#fff"/>
+</svg>

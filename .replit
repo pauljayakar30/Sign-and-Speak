@@ -1,0 +1,26 @@
+entrypoint = "server.js"
+modules = ["nodejs-20"]
+
+[nix]
+channel = "stable-24_11"
+
+[workflows]
+runButton = "Start server"
+
+[[workflows.workflow]]
+name = "Start server"
+mode = "parallel"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = """
+echo \"Installing deps and starting Node server...\" && npm install && npm start
+"""
+waitForPort = 3000
+
+[[ports]]
+localPort = 3000
+externalPort = 3000
+
+[agent]
+expertMode = true

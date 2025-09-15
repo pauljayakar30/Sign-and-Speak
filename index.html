@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Sign & Speak</title>
+        <link href="style.css" rel="stylesheet" />
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+ </head>
+<body>
+        <header class="app-header">
+            <div style="display:flex;align-items:center;gap:10px">
+                <img src="design/assets/logo.svg" alt="Sign & Speak logo" width="36" height="36"/>
+                <h1>Sign & Speak</h1>
+            </div>
+            <nav class="tabs">
+                <button class="tab" data-target="#home">Home</button>
+                <button class="tab" data-target="#child">Child</button>
+                <button class="tab" data-target="#parent">Parent</button>
+                <button class="tab" data-target="#learn">Learn</button>
+            <button class="tab" data-target="#daily">Daily Plan</button>
+            <button class="tab" data-target="#stories">Stories</button>
+            </nav>
+        </header>
+
+        <main>
+            <!-- Home / Role selection -->
+            <section id="home" class="view">
+                <h2>Who is using the app?</h2>
+                <div class="role-select">
+                    <button id="choose-child" class="primary">I'm a Child</button>
+                    <button id="choose-parent" class="secondary">I'm a Parent</button>
+                </div>
+                <p class="muted">You can switch tabs anytime from the top.</p>
+            </section>
+
+            <!-- Child dashboard -->
+            <section id="child" class="view hidden">
+                <div class="mascot-callout" aria-hidden="true">
+                    <img src="design/assets/mascot-otter.svg" alt="" width="72" height="72"/>
+                    <div class="bubble">Today’s Adventure!</div>
+                </div>
+                <h2>Child's Voice</h2>
+                <div class="grid">
+                    <div>
+                        <div class="video-wrap">
+                            <video id="webcam" autoplay playsinline></video>
+                            <canvas id="output_canvas" width="640" height="480"></canvas>
+                        </div>
+                        <h3 id="result">Show me a sign!</h3>
+                    </div>
+                    <div>
+                        <div class="card">
+                            <h3>Connect to Parent</h3>
+                            <div class="pairing">
+                                <label for="child-code">Enter Parent Code</label>
+                                <input id="child-code" placeholder="e.g., 482913" />
+                                <button id="child-join" class="primary">Join</button>
+                                <div id="child-pair-status" class="status"></div>
+                            </div>
+                            <p class="muted small">When paired, recognized signs will be shared with your parent.</p>
+                        </div>
+
+                                <div class="card" style="margin-top: 12px;">
+                                    <h3>Child Coach</h3>
+                                    <div class="row">
+                                        <input id="coach-sign" placeholder="Sign (e.g., MILK)" />
+                                        <input id="coach-age" type="number" min="1" max="12" placeholder="Age (e.g., 4)" />
+                                        <button id="coach-get" class="secondary">Get Tips</button>
+                                    </div>
+                                    <div id="coach-output" class="ai"></div>
+                                </div>
+
+                                                <div class="card" style="margin-top: 12px;">
+                                                    <h3>Current Mood</h3>
+                                                    <p class="muted small">Detected from facial expressions (experimental)</p>
+                                                    <div class="row"><strong id="mood-label">Neutral</strong></div>
+                                                </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Parent dashboard -->
+            <section id="parent" class="view hidden">
+                <h2>Parent Dashboard</h2>
+                <div class="grid">
+                    <div class="card">
+                        <h3>Pair with Child</h3>
+                        <button id="parent-generate" class="primary">Generate Code</button>
+                        <div id="parent-code" class="code"></div>
+                        <div id="parent-pair-status" class="status"></div>
+                    </div>
+                    <div class="card">
+                        <h3>Child Activity</h3>
+                        <div id="parent-feed" class="feed"></div>
+                    </div>
+                </div>
+
+                <div class="parent-corner card">
+                    <h3>Parent's Corner (AI)</h3>
+                    <p class="muted small">Ask for advice (keep it short):</p>
+                    <div class="row">
+                        <input type="text" id="parent-prompt" placeholder="e.g., 1 tip to teach MILK" />
+                        <button id="a">Ask AI Assistant</button>
+                    </div>
+                    <div id="ai-response" class="ai"></div>
+                </div>
+
+                        <div class="grid" style="margin-top: 16px;">
+                            <div class="card">
+                                <h3>Weekly Plan</h3>
+                                <div class="row">
+                                    <input id="weekly-focus" placeholder="Focus (e.g., STOP)" />
+                                    <select id="weekly-days">
+                                        <option value="3">3 days</option>
+                                        <option value="5" selected>5 days</option>
+                                        <option value="7">7 days</option>
+                                    </select>
+                                    <button id="weekly-generate" class="secondary">Create Plan</button>
+                                </div>
+                                <div id="weekly-output" class="ai"></div>
+                            </div>
+
+                            <div class="card">
+                                <h3>Parent Insights</h3>
+                                <p class="muted small">Summarize recent activity and get 3 coaching tips.</p>
+                                <div class="row">
+                                    <button id="insights-generate" class="secondary">Generate Insights</button>
+                                </div>
+                                <div id="insights-output" class="ai"></div>
+                            </div>
+                                        <div class="card">
+                                            <h3>Mood Coach</h3>
+                                            <p class="muted small">Get advice tailored to the child's current mood.</p>
+                                            <div class="row">
+                                                <button id="mood-advice" class="secondary">Get Mood Advice</button>
+                                            </div>
+                                            <div id="mood-advice-output" class="ai"></div>
+                                        </div>
+                        </div>
+            </section>
+
+            <!-- Learn section -->
+            <section id="learn" class="view hidden">
+                <h2>Learn: Basic Signs</h2>
+                <div class="grid">
+                    <div class="card">
+                        <h3>For Children</h3>
+                        <ul>
+                            <li>STOP: Show open palm and say “Stop.”</li>
+                            <li>MILK: Make a fist and gently squeeze while saying “Milk.”</li>
+                            <li>HELP: One palm up, other hand thumbs-up on palm (practice safely).</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>For Parents</h3>
+                        <ul>
+                            <li>Model + Say + Do: Say the word, show the sign, do the action.</li>
+                            <li>Short Sessions: 3–5 minute bursts during daily routines.</li>
+                            <li>Celebrate Tries: Praise approximations; keep it fun.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Daily plan (AI) -->
+            <section id="daily" class="view hidden">
+                <h2>Daily Plan</h2>
+                <div class="card">
+                    <p class="muted small">Generate a short, friendly plan for practice.</p>
+                    <div class="row">
+                        <select id="daily-role">
+                            <option value="child">For a Child</option>
+                            <option value="parent">For a Parent</option>
+                        </select>
+                        <input id="daily-focus" placeholder="Focus (e.g., MILK, STOP)" />
+                        <button id="daily-generate" class="primary">Generate Plan</button>
+                    </div>
+                    <div id="daily-output" class="ai"></div>
+                </div>
+            </section>
+
+                    <!-- Stories (AI) -->
+                    <section id="stories" class="view hidden">
+                        <h2>Bedtime Stories</h2>
+                        <div class="card">
+                            <p class="muted small">Create a tiny story that naturally includes your chosen signs.</p>
+                            <div class="row">
+                                <input id="story-theme" placeholder="Theme (e.g., bedtime, playground)" />
+                                <input id="story-signs" placeholder="Signs (e.g., MILK, STOP)" />
+                                <button id="story-generate" class="secondary">Create Story</button>
+                                <button id="story-speak" class="secondary">Speak</button>
+                            </div>
+                            <div id="story-output" class="ai"></div>
+                        </div>
+                    </section>
+        </main>
+
+        <footer class="app-footer">
+            <small>Built for learning and communication. Camera data stays in your browser.</small>
+        </footer>
+
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+            <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+        <script src="script.js"></script>
+    </body>
+    </html>
