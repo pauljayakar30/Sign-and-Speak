@@ -1,3 +1,15 @@
+/**
+ * Sign & Speak - Backend Server
+ * 
+ * This Express server provides:
+ * - OpenAI GPT API proxy endpoints for AI features (with demo mode fallback)
+ * - Parent-child pairing system for progress tracking
+ * - Environment configuration endpoints
+ * 
+ * The React frontend runs separately on Vite dev server (port 5173) in development,
+ * and this backend runs on port 3000. In production, both are deployed together.
+ */
+
 import 'dotenv/config';
 import express from 'express';
 import OpenAI from 'openai';
@@ -10,46 +22,71 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(express.json());
-// Gracefully handle invalid JSON bodies
+
+// Gracefully handle invalid JSON request bodies
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && 'body' in err) {
     return res.status(400).send({ error: 'Invalid JSON body' });
   }
   next();
 });
-app.use(cors()); // Allow requests from your frontend
 
-// Serve the static frontend from the same server for simplicity
-app.use(express.static(__dirname));
+// Enable CORS for frontend requests
+// Enable CORS for frontend requests
+app.use(cors());
 
-// Redact helper for logs: masks tokens like sk-... and sk-proj-... to avoid accidental exposure
+/**
+ * Security: Redact sensitive API keys from logs
+ * Masks OpenAI API keys (sk-... or sk-proj-...) to prevent accidental exposure in console logs
+ */
 function redact(s) {
   try {
     const str = String(s ?? '');
-    // Mask OpenAI-style keys (sk- or sk-proj- prefixes)
     return str
       .replace(/sk-[a-zA-Z0-9_-]{10,}/g, (m) => m.slice(0, 6) + '***REDACTED***')
       .replace(/sk-proj-[a-zA-Z0-9_-]{10,}/g, (m) => m.slice(0, 9) + '***REDACTED***');
-  } catch { return '[redacted]'; }
+  } catch { 
+    return '[redacted]'; 
+  }
 }
 
+// Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Demo mode: Enable if no API key is provided or explicitly requested
 const DEMO_MODE = process.env.DEMO_MODE === '1' || !process.env.OPENAI_API_KEY;
 if (!process.env.OPENAI_API_KEY) {
-  console.warn('[Sign & Speak] Warning: OPENAI_API_KEY is not set. AI endpoints will run in DEMO MODE.');
+  console.warn('[Sign & Speak] Warning: OPENAI_API_KEY not set. Running in DEMO MODE with mock AI responses.');
 }
 
+// Configuration
 const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const MAX_TOKENS = Number(process.env.OPENAI_MAX_TOKENS || 150);
 const DEMO_FALLBACK_ON_QUOTA = process.env.DEMO_FALLBACK_ON_QUOTA === '1';
 
-// Health check
+/**
+ * Health check endpoint
+ */
 app.get('/health', (_req, res) => res.send({ ok: true }));
 
-// Align the route with the frontend
+/**
+ * Environment status endpoint
+ * Returns whether OpenAI API key is configured and if demo mode is active
+ */
+app.get('/env-ok', (_req, res) => {
+  res.send({ 
+    openaiKeyPresent: Boolean(process.env.OPENAI_API_KEY), 
+    demoMode: DEMO_MODE 
+  });
+});
+
+/**
+ * Main OpenAI GPT endpoint
+ * Accepts a prompt and returns an AI-generated response
+ * Falls back to demo mode if no API key or on quota errors
+ */
 app.post('/ask-gpt', async (req, res) => {
   const { prompt } = req.body;
   if (!prompt) {
@@ -121,23 +158,22 @@ app.post('/ask-gpt', async (req, res) => {
   }
 });
 
-// Explicit root to index.html (useful if static middleware pathing changes)
-app.get('/', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
+/**
+ * Parent-Child Pairing System
+ * 
+ * Simple in-memory store for connecting parent dashboard with child's activity
+ * In production, this should be replaced with a database (MongoDB, PostgreSQL, etc.)
+ * 
+ * Data structure: code -> { claimed: bool, feed: Array<{t: timestamp, type: string, payload: any}> }
+ */
+const pairs = new Map();
 
-// Minimal diagnostics endpoint (no secrets)
-app.get('/env-ok', (_req, res) => {
-  res.send({ openaiKeyPresent: Boolean(process.env.OPENAI_API_KEY), demoMode: DEMO_MODE });
-});
-
-// --- Simple in-memory pairing store (for demo) ---
-const pairs = new Map(); // code -> { claimed: bool, childId: string|null, parentId: string|null, feed: [] }
+/** Generate a random 6-digit pairing code */
 function randomCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// Generate a pairing code (parent)
+/** POST /pair/generate - Generate a new pairing code (parent initiates) */
 app.post('/pair/generate', (_req, res) => {
   let code = randomCode();
   while (pairs.has(code)) code = randomCode();
@@ -145,7 +181,8 @@ app.post('/pair/generate', (_req, res) => {
   res.send({ code });
 });
 
-// Claim a code (child)
+/** POST /pair/claim - Child claims a pairing code */
+/** POST /pair/claim - Child claims a pairing code */
 app.post('/pair/claim', (req, res) => {
   const { code } = req.body || {};
   if (!code || !pairs.has(code)) return res.status(400).send({ error: 'Invalid code' });
@@ -155,7 +192,7 @@ app.post('/pair/claim', (req, res) => {
   res.send({ ok: true });
 });
 
-// Poll status (parent)
+/** GET /pair/status/:code - Check if a pairing code has been claimed */
 app.get('/pair/status/:code', (req, res) => {
   const code = req.params.code;
   const p = pairs.get(code);
@@ -163,7 +200,8 @@ app.get('/pair/status/:code', (req, res) => {
   res.send({ claimed: p.claimed });
 });
 
-// Child event -> feed (e.g., recognized sign)
+/** POST /pair/event - Child sends activity event to parent's feed */
+/** POST /pair/event - Child sends activity event to parent's feed */
 app.post('/pair/event', (req, res) => {
   const { code, type } = req.body || {};
   const payload = req.body?.payload ?? (req.body?.value !== undefined ? { value: req.body.value } : undefined);
@@ -171,11 +209,11 @@ app.post('/pair/event', (req, res) => {
   const p = pairs.get(code);
   const entry = { t: Date.now(), type, payload };
   p.feed.unshift(entry);
-  p.feed = p.feed.slice(0, 50);
+  p.feed = p.feed.slice(0, 50); // Keep only last 50 events
   res.send({ ok: true });
 });
 
-// Parent fetch feed
+/** GET /pair/feed/:code - Parent fetches activity feed */
 app.get('/pair/feed/:code', (req, res) => {
   const code = req.params.code;
   const p = pairs.get(code);
@@ -183,7 +221,13 @@ app.get('/pair/feed/:code', (req, res) => {
   res.send({ feed: p.feed });
 });
 
-// Daily plan via AI (simple wrapper)
+/**
+ * Specialized AI Endpoints
+ * These endpoints provide pre-configured prompts for specific use cases
+ */
+
+/** POST /ask-daily - Generate daily practice plan for a specific sign */
+/** POST /ask-daily - Generate daily practice plan for a specific sign */
 app.post('/ask-daily', async (req, res) => {
   const { role = 'child', focus = 'MILK' } = req.body || {};
   const prompt = `Create a short daily practice plan for ${role === 'parent' ? 'a parent teaching' : 'a child learning'} the sign "${focus}". Use 3-5 bullet points, specific, fun, and safe. Avoid medical advice.`;
@@ -191,7 +235,7 @@ app.post('/ask-daily', async (req, res) => {
   return app._router.handle({ ...req, method: 'POST', url: '/ask-gpt' }, res, () => {});
 });
 
-// Coaching tips for a sign (child-friendly wording)
+/** POST /ask-coach - Get coaching tips for practicing a specific sign */
 app.post('/ask-coach', async (req, res) => {
   const { sign = 'MILK', age = '4' } = req.body || {};
   const prompt = `Explain how to practice the sign "${sign}" with a ${age}-year-old in 3 friendly steps. Keep it simple, playful, and short. Avoid medical advice.`;
@@ -199,7 +243,7 @@ app.post('/ask-coach', async (req, res) => {
   return app._router.handle({ ...req, method: 'POST', url: '/ask-gpt' }, res, () => {});
 });
 
-// Bedtime story with signs incorporated
+/** POST /ask-story - Generate bedtime story incorporating specific signs */
 app.post('/ask-story', async (req, res) => {
   const { theme = 'bedtime', signs = ['MILK','STOP'] } = req.body || {};
   const useSigns = Array.isArray(signs) ? signs.join(', ') : String(signs);
@@ -208,7 +252,7 @@ app.post('/ask-story', async (req, res) => {
   return app._router.handle({ ...req, method: 'POST', url: '/ask-gpt' }, res, () => {});
 });
 
-// Weekly plan (parent-focused)
+/** POST /ask-weekly - Generate multi-day teaching plan for parents */
 app.post('/ask-weekly', async (req, res) => {
   const { focus = 'MILK', days = 5 } = req.body || {};
   const prompt = `Create a ${days}-day micro-plan to teach the sign "${focus}". Each day: 2-3 bullet points, simple actions during routines (mealtime, play, dressing). Avoid medical advice.`;
@@ -216,7 +260,7 @@ app.post('/ask-weekly', async (req, res) => {
   return app._router.handle({ ...req, method: 'POST', url: '/ask-gpt' }, res, () => {});
 });
 
-// Insights for parents from recent feed
+/** POST /ask-insights - Analyze recent activity and provide parent insights */
 app.post('/ask-insights', async (req, res) => {
   const { feed = [] } = req.body || {};
   const normalized = (Array.isArray(feed) ? feed : []).slice(0, 30).map(e => {
@@ -228,7 +272,7 @@ app.post('/ask-insights', async (req, res) => {
   return app._router.handle({ ...req, method: 'POST', url: '/ask-gpt' }, res, () => {});
 });
 
-// Mood advice from a simple label
+/** POST /ask-mood - Get supportive tips based on child's current mood */
 app.post('/ask-mood', async (req, res) => {
   const { mood = 'Neutral' } = req.body || {};
   const prompt = `Provide 3 short, supportive tips for a parent when a child seems ${mood}. Be practical, calming, and avoid medical advice.`;
@@ -236,7 +280,11 @@ app.post('/ask-mood', async (req, res) => {
   return app._router.handle({ ...req, method: 'POST', url: '/ask-gpt' }, res, () => {});
 });
 
+/**
+ * Start the server
+ */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`[Sign & Speak] Server running on http://localhost:${PORT}`);
+  console.log(`[Sign & Speak] Demo mode: ${DEMO_MODE ? 'ON (no API key)' : 'OFF'}`);
 });

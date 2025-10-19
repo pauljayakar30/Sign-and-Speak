@@ -9,29 +9,22 @@
 				"start"
 			],
 			"isBackground": true,
-			"problemMatcher": [
-				"$eslint-stylish"
-			],
-			"group": "build"
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
 		},
 		{
-			"label": "Restart server",
+			"label": "Start React dev server",
 			"type": "shell",
 			"command": "npm",
 			"args": [
-				"start"
+				"run",
+				"dev:webapp"
 			],
 			"isBackground": true,
-			"group": "build"
-		},
-		{
-			"label": "Restart server",
-			"type": "shell",
-			"command": "npm",
-			"args": [
-				"start"
-			],
-			"isBackground": true,
+			"problemMatcher": [],
 			"group": "build"
 		}
 	]

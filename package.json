@@ -1,13 +1,41 @@
 {
   "name": "sign-and-speak",
-  "version": "0.1.0",
-  "private": true,
+  "version": "1.0.0",
+  "description": "Real-time sign language recognition platform for children with AI-powered coaching for parents. Detects 15+ hand signs and 7 facial expressions using MediaPipe.",
+  "author": "Paul J.",
+  "license": "MIT",
+  "private": false,
   "type": "module",
+  "keywords": [
+    "sign-language",
+    "accessibility",
+    "education",
+    "ai-coaching",
+    "mediapipe",
+    "react",
+    "openai",
+    "child-learning",
+    "computer-vision",
+    "gesture-recognition"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_USERNAME/sign-and-speak.git"
+  },
+  "bugs": {
+    "url": "https://github.com/YOUR_USERNAME/sign-and-speak/issues"
+  },
+  "homepage": "https://github.com/YOUR_USERNAME/sign-and-speak#readme",
   "scripts": {
     "start": "node server.js",
     "dev:webapp": "npm run dev --prefix webapp",
     "build:webapp": "npm run build --prefix webapp",
-    "preview:webapp": "npm run preview --prefix webapp"
+    "preview:webapp": "npm run preview --prefix webapp",
+    "deploy": "vercel --prod"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
   },
   "dependencies": {
     "cors": "^2.8.5",
