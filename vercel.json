@@ -9,29 +9,18 @@
       "src": "webapp/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "webapp/dist"
+        "distDir": "dist"
       }
     }
   ],
   "routes": [
-    {
-      "src": "/assets/(.*)",
-      "dest": "/webapp/dist/assets/$1"
-    },
-    {
-      "src": "/design/(.*)",
-      "dest": "/design/$1"
-    },
     {
       "src": "/(ask-.*|pair/.*|env-ok)",
       "dest": "/server.js"
     },
     {
       "src": "/(.*)",
-      "dest": "/webapp/dist/$1"
+      "dest": "/webapp/$1"
     }
-  ],
-  "env": {
-    "OPENAI_API_KEY": "@openai-api-key"
-  }
+  ]
 }
