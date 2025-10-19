@@ -1,3 +1,21 @@
+/**
+ * ChildHome Component
+ * 
+ * Main view for child users featuring interactive sign language practice.
+ * 
+ * Features:
+ * - Real-time camera-based sign recognition with MediaPipe
+ * - Goal tracking with daily star challenges
+ * - Unlockable sticker rewards based on progress
+ * - Character selection (Otter, Panda, Fox, Dino)
+ * - Parent pairing via unique code system
+ * - Persistent data storage in localStorage/sessionStorage
+ * 
+ * Data Flow:
+ * - Stars/progress stored in localStorage (survives page refresh)
+ * - Parent pairing code stored in sessionStorage (session-only)
+ * - Custom 'starsUpdated' event syncs UI when stars change
+ */
 import React, { useState, useEffect } from 'react'
 import CameraPanel from './CameraPanel.jsx'
 import GoalRing from './GoalRing.jsx'
@@ -5,13 +23,17 @@ import StickerBook from './StickerBook.jsx'
 import CharacterPicker from './CharacterPicker.jsx'
 
 export default function ChildHome() {
-  const [code, setCode] = useState('')
-  const [status, setStatus] = useState('')
-  const [cameraOn, setCameraOn] = useState(false)
-  const [avatar, setAvatar] = useState(() => localStorage.getItem('avatar') || 'otter')
-  const [stars, setStars] = useState(() => Number(localStorage.getItem('stars') || '0'))
-  const DAILY_GOAL = 10
+  // Pairing state
+  const [code, setCode] = useState('') // Parent-provided pairing code
+  const [status, setStatus] = useState('') // Connection status feedback
+  
+  // Camera and gameplay state
+  const [cameraOn, setCameraOn] = useState(false) // Toggle for CameraPanel visibility
+  const [avatar, setAvatar] = useState(() => localStorage.getItem('avatar') || 'otter') // Selected character
+  const [stars, setStars] = useState(() => Number(localStorage.getItem('stars') || '0')) // Total stars earned
+  const DAILY_GOAL = 10 // Stars needed to complete daily challenge
 
+  /** Connect to parent dashboard using pairing code */
   async function join() {
     const c = code.trim()
     if (!c) return
@@ -25,12 +47,15 @@ export default function ChildHome() {
       setStatus('Network error')
     }
   }
+
+  /** Listen for star updates from CameraPanel/other components */
   useEffect(() => {
     function onStars(e) { setStars(Number(localStorage.getItem('stars') || '0')) }
     window.addEventListener('starsUpdated', onStars)
     return () => window.removeEventListener('starsUpdated', onStars)
   }, [])
 
+  /** Update avatar selection and persist to localStorage */
   function chooseAvatar(id) {
     setAvatar(id)
     try { localStorage.setItem('avatar', id) } catch {}

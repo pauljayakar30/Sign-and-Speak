@@ -1,11 +1,29 @@
+/**
+ * Sign & Speak - Main Application Component
+ * 
+ * A sign language learning platform for children with real-time gesture recognition,
+ * AI-powered coaching, and parent progress tracking.
+ * 
+ * Features:
+ * - Real-time hand sign detection using MediaPipe
+ * - Mood/facial expression recognition
+ * - Training mode with progress tracking
+ * - Parent dashboard with analytics
+ * - AI-powered coaching and tips
+ * - Demo mode for testing without API key
+ */
+
 import React, { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import ChildHome from './components/ChildHome.jsx'
 import ParentDashboard from './components/ParentDashboard.jsx'
-import ToyboxScene from './components/ToyboxScene.jsx'
+import NewHome from './components/NewHome.jsx'
 import CoachWidget from './components/CoachWidget.jsx'
 import TrainingMode from './components/TrainingMode.jsx'
 
+/**
+ * TabButton - Navigation tab component with animated underline
+ */
 function TabButton({ id, current, onClick, children }) {
   const active = current === id
   return (
@@ -17,16 +35,27 @@ function TabButton({ id, current, onClick, children }) {
 }
 
 export default function App() {
+  // Navigation state
   const [tab, setTab] = useState('home')
+  
+  // Server environment status (API key presence, demo mode)
   const [envOk, setEnvOk] = useState(null)
+  
+  // Current user's selected avatar character
   const [avatar, setAvatar] = useState(() => localStorage.getItem('avatar') || '')
+  
+  // Mobile menu toggle
   const [menuOpen, setMenuOpen] = useState(false)
+  
+  // Respect user's motion preferences for accessibility
   const prefersReduced = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
+  // Check server environment status on mount
   useEffect(() => {
     fetch('/env-ok').then(r => r.json()).then(setEnvOk).catch(() => setEnvOk({ openaiKeyPresent: false, demoMode: true }))
   }, [])
 
+  // Sync avatar across tabs and components
   useEffect(() => {
     function onStorage() { setAvatar(localStorage.getItem('avatar') || '') }
     window.addEventListener('storage', onStorage)
@@ -34,6 +63,7 @@ export default function App() {
     return () => { window.removeEventListener('storage', onStorage); clearInterval(iv) }
   }, [])
 
+  // Animation variants for page transitions
   const variants = useMemo(() => ({
     enter: { opacity: 0, y: prefersReduced ? 0 : 12 },
     center: { opacity: 1, y: 0 },
@@ -42,19 +72,23 @@ export default function App() {
 
   return (
     <div className="app">
+      {/* Floating Navigation Bar */}
       <header className={`app-header glass`}> 
         <div className="nav-inner">
+          {/* Brand Logo and Title */}
           <div className="brand">
             <img src="/design/assets/logo.svg" alt="Sign & Speak logo" width={28} height={28} />
             <h1>Sign & Speak</h1>
           </div>
 
+          {/* Mobile Hamburger Menu */}
           <button className="hamburger" aria-label="Open menu" onClick={() => setMenuOpen(v => !v)}>
             <span />
             <span />
             <span />
           </button>
 
+          {/* Navigation Tabs */}
           <nav className={`tabs seg ${menuOpen ? 'open' : ''}`}>
             <TabButton id="home" current={tab} onClick={(id)=>{ setTab(id); setMenuOpen(false) }}>Home</TabButton>
             <TabButton id="child" current={tab} onClick={(id)=>{ setTab(id); setMenuOpen(false) }}>Child</TabButton>
@@ -62,6 +96,7 @@ export default function App() {
             <TabButton id="train" current={tab} onClick={(id)=>{ setTab(id); setMenuOpen(false) }}>Train</TabButton>
           </nav>
 
+          {/* Status Badges (Demo mode, Avatar) */}
           <div className="header-actions">
             {envOk?.demoMode && (
               <div className="badge pill" title="AI replies are simulated for demo">Demo</div>
@@ -71,14 +106,12 @@ export default function App() {
         </div>
       </header>
 
+      {/* Main Content Area with Page Transitions */}
       <main>
         <AnimatePresence mode="wait">
           {tab === 'home' && (
-            <motion.section key="home" className="view" initial="enter" animate="center" exit="exit" variants={variants}>
-              <ToyboxScene onStartChild={() => setTab('child')} onOpenParent={() => setTab('parent')} />
-              {envOk && !envOk.openaiKeyPresent && (
-                <p className="warning" style={{ textAlign:'center', marginTop: 8 }}>AI key not detected on server; AI features may be limited.</p>
-              )}
+            <motion.section key="home" className="view home-view" initial="enter" animate="center" exit="exit" variants={variants}>
+              <NewHome onStartChild={() => setTab('child')} onOpenParent={() => setTab('parent')} />
             </motion.section>
           )}
 
@@ -100,10 +133,12 @@ export default function App() {
         </AnimatePresence>
       </main>
 
+      {/* Privacy Footer */}
       <footer className="app-footer">
         <small>Built for learning and communication. Camera data stays in your browser.</small>
       </footer>
 
+      {/* AI Coach Floating Widget */}
       <CoachWidget mode={tab === 'child' ? 'child' : (tab === 'parent' ? 'parent' : 'home')} demo={Boolean(envOk?.demoMode)} />
     </div>
   )

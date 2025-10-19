@@ -1,14 +1,42 @@
+/**
+ * ParentDashboard Component
+ * 
+ * Real-time monitoring and analytics dashboard for parents/guardians.
+ * 
+ * Features:
+ * - Generate unique pairing codes to connect with child's activity
+ * - Live activity feed showing signs recognized and mood changes
+ * - At-a-glance KPIs: total stars, unique signs, practice time, current mood
+ * - Trend sparkline visualization of recent practice activity
+ * - AI-powered coaching with specialized endpoints:
+ *   - Weekly summary reports
+ *   - Daily practice ideas
+ *   - Next steps recommendations
+ *   - Custom GPT queries
+ * 
+ * Data Flow:
+ * - Pairing code generated server-side via /pair/generate
+ * - Status polled every 2 seconds via /pair/status/:code
+ * - Activity feed fetched via /pair/feed/:code
+ * - AI requests sent to specialized endpoints or /ask-gpt fallback
+ */
 import React, { useEffect, useMemo, useState } from 'react'
 import TrendSparkline from './TrendSparkline'
 
 export default function ParentDashboard() {
-  const [code, setCode] = useState('')
-  const [status, setStatus] = useState('')
-  const [feed, setFeed] = useState([])
-  const [aiText, setAiText] = useState('')
-  const [prompt, setPrompt] = useState('1 tip to teach MILK')
-  const [loading, setLoading] = useState(false)
+  // Pairing state
+  const [code, setCode] = useState('') // Unique 6-digit code for child to connect
+  const [status, setStatus] = useState('') // Connection status message
+  
+  // Activity monitoring
+  const [feed, setFeed] = useState([]) // Array of {type, t, payload} events from child
+  
+  // AI coaching state
+  const [aiText, setAiText] = useState('') // AI response text
+  const [prompt, setPrompt] = useState('1 tip to teach MILK') // User's custom AI question
+  const [loading, setLoading] = useState(false) // Loading state for AI requests
 
+  /** Generate new pairing code and start polling for connection */
   async function generateCode() {
     setStatus('Generating…')
     const r = await fetch('/pair/generate', { method: 'POST' })
@@ -17,6 +45,7 @@ export default function ParentDashboard() {
     setStatus('Waiting for child…')
   }
 
+  /** Poll pairing status and activity feed every 2 seconds when code exists */
   useEffect(() => {
     let t
     async function poll() {
@@ -39,6 +68,7 @@ export default function ParentDashboard() {
     return () => clearTimeout(t)
   }, [code])
 
+  /** Calculate analytics from feed events (memoized for performance) */
   const stats = useMemo(() => {
     const now = Date.now()
     const lastHour = now - 60*60*1000
@@ -61,6 +91,7 @@ export default function ParentDashboard() {
     return { uniqueSigns, minutesPracticed, series, lastMood, totalStars }
   }, [feed])
 
+  /** Send custom prompt to GPT */
   async function askAI() {
     setLoading(true)
     setAiText('Thinking…')
@@ -75,6 +106,7 @@ export default function ParentDashboard() {
     }
   }
 
+  /** Call specialized AI endpoint with fallback to generic /ask-gpt */
   async function askEndpoint(path, fallbackPrompt) {
     setLoading(true); setAiText('Thinking…')
     try {
