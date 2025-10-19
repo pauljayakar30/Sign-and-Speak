@@ -20,6 +20,7 @@ import ParentDashboard from './components/ParentDashboard.jsx'
 import NewHome from './components/NewHome.jsx'
 import CoachWidget from './components/CoachWidget.jsx'
 import TrainingMode from './components/TrainingMode.jsx'
+import { ToastProvider } from './components/Toast.jsx'
 
 /**
  * TabButton - Navigation tab component with animated underline
@@ -47,6 +48,12 @@ export default function App() {
   // Mobile menu toggle
   const [menuOpen, setMenuOpen] = useState(false)
   
+  // Dark mode toggle (default: light mode)
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode')
+    return saved === 'true' ? true : false
+  })
+  
   // Respect user's motion preferences for accessibility
   const prefersReduced = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
@@ -63,17 +70,49 @@ export default function App() {
     return () => { window.removeEventListener('storage', onStorage); clearInterval(iv) }
   }, [])
 
-  // Animation variants for page transitions
+  // Manage dark mode
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark-mode')
+      localStorage.setItem('darkMode', 'true')
+    } else {
+      document.documentElement.classList.remove('dark-mode')
+      localStorage.setItem('darkMode', 'false')
+    }
+  }, [darkMode])
+
+  // Enhanced animation variants for smooth page transitions
   const variants = useMemo(() => ({
-    enter: { opacity: 0, y: prefersReduced ? 0 : 12 },
-    center: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: prefersReduced ? 0 : -12 }
+    enter: { 
+      opacity: 0, 
+      y: prefersReduced ? 0 : 20,
+      scale: prefersReduced ? 1 : 0.98
+    },
+    center: { 
+      opacity: 1, 
+      y: 0,
+      scale: 1,
+      transition: {
+        duration: 0.3,
+        ease: [0.22, 1, 0.36, 1] // Custom easing for smooth feel
+      }
+    },
+    exit: { 
+      opacity: 0, 
+      y: prefersReduced ? 0 : -20,
+      scale: prefersReduced ? 1 : 0.98,
+      transition: {
+        duration: 0.2,
+        ease: [0.22, 1, 0.36, 1]
+      }
+    }
   }), [prefersReduced])
 
   return (
-    <div className="app">
-      {/* Floating Navigation Bar */}
-      <header className={`app-header glass`}> 
+    <ToastProvider>
+      <div className="app">
+        {/* Floating Navigation Bar */}
+        <header className={`app-header glass`}> 
         <div className="nav-inner">
           {/* Brand Logo and Title */}
           <div className="brand">
@@ -96,12 +135,22 @@ export default function App() {
             <TabButton id="train" current={tab} onClick={(id)=>{ setTab(id); setMenuOpen(false) }}>Train</TabButton>
           </nav>
 
-          {/* Status Badges (Demo mode, Avatar) */}
+          {/* Status Badges (Demo mode, Avatar, Dark Mode Toggle) */}
           <div className="header-actions">
             {envOk?.demoMode && (
               <div className="badge pill" title="AI replies are simulated for demo">Demo</div>
             )}
             {avatar && <div className="avatar-badge sm" title="Current character" aria-label="Current character">{avatar === 'otter' ? '🦦' : avatar === 'panda' ? '🐼' : avatar === 'fox' ? '🦊' : '🦕'}</div>}
+            
+            {/* Dark Mode Toggle */}
+            <button 
+              className="theme-toggle" 
+              onClick={() => setDarkMode(prev => !prev)}
+              aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={darkMode ? 'Light mode' : 'Dark mode'}
+            >
+              {darkMode ? '☀️' : '🌙'}
+            </button>
           </div>
         </div>
       </header>
@@ -141,5 +190,6 @@ export default function App() {
       {/* AI Coach Floating Widget */}
       <CoachWidget mode={tab === 'child' ? 'child' : (tab === 'parent' ? 'parent' : 'home')} demo={Boolean(envOk?.demoMode)} />
     </div>
+    </ToastProvider>
   )
 }

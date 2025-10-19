@@ -1,8 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react'
+import Skeleton from './Skeleton'
+import { useToast } from './Toast'
 
 export default function CameraPanel() {
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
+  const toast = useToast()
   const [ready, setReady] = useState(false)
   const [label, setLabel] = useState('Show me a sign!')
   const [mood, setMood] = useState('Neutral')
@@ -29,6 +32,8 @@ export default function CameraPanel() {
       setStars(next)
       localStorage.setItem('stars', String(next))
       setLastEarned(signLabel)
+      // Show success toast
+      toast.success(`⭐ Great job! You earned a star for ${signLabel}!`, { duration: 4000 })
       // notify others
       try { window.dispatchEvent(new CustomEvent('starsUpdated', { detail: next })) } catch {}
     } catch {}
@@ -189,6 +194,9 @@ export default function CameraPanel() {
   const stable = Object.keys(counts).filter(k => counts[k] >= (stableThresholdMap[k] || STABLE_COUNT))
       if (stable.length) {
         setLabel(`Detected: ${stable.map(s => s.replace('_',' ')).join(', ')}`)
+        // Show info toast for detected signs
+        const signNames = stable.map(s => s.replace('_',' ')).join(', ')
+        toast.info(`👋 Sign detected: ${signNames}`, { duration: 2500 })
         const now = Date.now()
         // Handle each stable sign with cooldowns
           const wordsMap = {
@@ -548,7 +556,12 @@ export default function CameraPanel() {
         <strong>{label}</strong>
         <span style={{ marginLeft: 'auto' }}>Mood: {mood}</span>
       </div>
-      {!ready && <p className="muted">Loading camera… If prompted, allow camera access.</p>}
+      {!ready && (
+        <div style={{ marginTop: 10 }}>
+          <Skeleton variant="text" width="80%" />
+          <p className="muted" style={{ marginTop: 8 }}>If prompted, allow camera access.</p>
+        </div>
+      )}
       {transcript && (
         <div className="card" style={{ marginTop: 10 }}>
           <h3>Live Transcript</h3>

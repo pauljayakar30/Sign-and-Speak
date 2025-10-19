@@ -1,0 +1,281 @@
+/**
+ * Error State Styles
+ * 
+ * Visual design for error scenarios with recovery actions.
+ * Follows BEM naming convention and design tokens.
+ */
+
+/* ============================================
+   BASE ERROR STATE
+   ============================================ */
+
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--spacing-8);
+  border-radius: var(--border-radius-lg);
+  background: var(--color-background);
+  border: 2px solid var(--color-danger);
+}
+
+/* ============================================
+   VARIANTS
+   ============================================ */
+
+/* Default - standard error display */
+.error-state--default {
+  padding: var(--spacing-8);
+  border-width: 2px;
+}
+
+/* Compact - smaller error for inline use */
+.error-state--compact {
+  padding: var(--spacing-6);
+  border-width: 1px;
+}
+
+/* Inline - minimal error without border */
+.error-state--inline {
+  padding: var(--spacing-4);
+  border: none;
+  background: transparent;
+}
+
+/* ============================================
+   SIZES
+   ============================================ */
+
+.error-state--sm {
+  max-width: 320px;
+}
+
+.error-state--md {
+  max-width: 480px;
+}
+
+.error-state--lg {
+  max-width: 640px;
+}
+
+/* ============================================
+   ELEMENTS
+   ============================================ */
+
+/* Icon */
+.error-state__icon {
+  font-size: 96px;
+  line-height: 1;
+  margin-bottom: var(--spacing-4);
+  user-select: none;
+  filter: grayscale(0.2);
+}
+
+.error-state--compact .error-state__icon {
+  font-size: 64px;
+  margin-bottom: var(--spacing-3);
+}
+
+.error-state--inline .error-state__icon {
+  font-size: 48px;
+  margin-bottom: var(--spacing-2);
+}
+
+.error-state--sm .error-state__icon {
+  font-size: 56px;
+  margin-bottom: var(--spacing-3);
+}
+
+/* Title */
+.error-state__title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-danger);
+  margin: 0 0 var(--spacing-3) 0;
+  line-height: var(--line-height-tight);
+}
+
+.error-state--compact .error-state__title {
+  font-size: var(--font-size-xl);
+  margin-bottom: var(--spacing-2);
+}
+
+.error-state--inline .error-state__title {
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--spacing-2);
+}
+
+.error-state--sm .error-state__title {
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--spacing-2);
+}
+
+/* Description */
+.error-state__description {
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--spacing-6) 0;
+  line-height: var(--line-height-relaxed);
+  max-width: 480px;
+}
+
+.error-state--compact .error-state__description {
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-4);
+}
+
+.error-state--inline .error-state__description {
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-3);
+}
+
+.error-state--sm .error-state__description {
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-4);
+  max-width: 320px;
+}
+
+/* Actions */
+.error-state__actions {
+  display: flex;
+  gap: var(--spacing-3);
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Developer error details (dev mode only) */
+.error-state__details {
+  margin-top: var(--spacing-4);
+  padding: var(--spacing-3);
+  background: var(--color-muted);
+  border-radius: var(--border-radius-sm);
+  max-width: 100%;
+  overflow: auto;
+  text-align: left;
+}
+
+.error-state__details summary {
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  padding: var(--spacing-2);
+}
+
+.error-state__details summary:hover {
+  color: var(--color-text);
+}
+
+.error-state__error-text {
+  margin: var(--spacing-3) 0 0 0;
+  padding: var(--spacing-3);
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-xs);
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  color: var(--color-danger);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 200px;
+}
+
+/* ============================================
+   DARK MODE
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  .error-state {
+    background: rgba(255, 59, 48, 0.05);
+    border-color: var(--color-danger);
+  }
+  
+  .error-state__title {
+    color: #ff6b6b;
+  }
+  
+  .error-state__description {
+    color: var(--color-text-secondary);
+  }
+  
+  .error-state__details {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  
+  .error-state__error-text {
+    background: rgba(0, 0, 0, 0.3);
+    color: #ff8787;
+  }
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .error-state {
+    padding: var(--spacing-6);
+  }
+  
+  .error-state__icon {
+    font-size: 72px;
+  }
+  
+  .error-state__title {
+    font-size: var(--font-size-xl);
+  }
+  
+  .error-state__description {
+    font-size: var(--font-size-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  .error-state {
+    padding: var(--spacing-5);
+  }
+  
+  .error-state__icon {
+    font-size: 56px;
+    margin-bottom: var(--spacing-3);
+  }
+  
+  .error-state__title {
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--spacing-2);
+  }
+  
+  .error-state__description {
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--spacing-4);
+  }
+  
+  .error-state__actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .error-state__actions button {
+    width: 100%;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+/* Focus-visible for keyboard navigation */
+.error-state:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .error-state {
+    transition: none;
+  }
+}

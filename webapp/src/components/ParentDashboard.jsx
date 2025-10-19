@@ -21,9 +21,15 @@
  * - AI requests sent to specialized endpoints or /ask-gpt fallback
  */
 import React, { useEffect, useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
 import TrendSparkline from './TrendSparkline'
+import Skeleton from './Skeleton'
+import { EmptyFeed } from './EmptyState'
+import { useToast } from './Toast'
 
 export default function ParentDashboard() {
+  const toast = useToast()
+  
   // Pairing state
   const [code, setCode] = useState('') // Unique 6-digit code for child to connect
   const [status, setStatus] = useState('') // Connection status message
@@ -94,13 +100,14 @@ export default function ParentDashboard() {
   /** Send custom prompt to GPT */
   async function askAI() {
     setLoading(true)
-    setAiText('Thinking…')
+    setAiText('') // Clear text to show skeleton
     try {
     const r = await fetch('/ask-gpt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) })
   const d = await r.json()
   setAiText(d && d.response ? `${d?.demo ? '[Demo] ' : ''}${d.response}` : 'AI is unavailable right now. Please try again later.')
-    } catch {
+    } catch (error) {
       setAiText('Network error.')
+      toast.error('Failed to get AI response. Check your connection.')
     } finally {
       setLoading(false)
     }
@@ -108,7 +115,7 @@ export default function ParentDashboard() {
 
   /** Call specialized AI endpoint with fallback to generic /ask-gpt */
   async function askEndpoint(path, fallbackPrompt) {
-    setLoading(true); setAiText('Thinking…')
+    setLoading(true); setAiText('') // Clear text to show skeleton
     try {
       const r = await fetch(path, { method: 'POST' })
   if (r.ok) { const d = await r.json(); setAiText(`${d?.demo ? '[Demo] ' : ''}${d.response || 'No response'}`) }
@@ -160,20 +167,64 @@ export default function ParentDashboard() {
 
       <div className="card">
         <h3>Child Activity (live feed)</h3>
-        <div className="feed">
-          {feed.map((e, i) => {
-            const dt = new Date(e.t).toLocaleTimeString()
-            if (e.type === 'sign') {
-              const val = e.payload?.value ?? e.value ?? ''
-              return <div key={i} className="feed-item"><strong>{dt}</strong>: Recognized {val}</div>
-            }
-            if (e.type === 'mood') {
-              const val = e.payload?.value ?? e.value ?? ''
-              return <div key={i} className="feed-item"><strong>{dt}</strong>: Mood {val}</div>
-            }
-            return <div key={i} className="feed-item"><strong>{dt}</strong>: {e.type}</div>
-          })}
-        </div>
+        {feed.length === 0 ? (
+          <EmptyFeed onConnect={!code ? generateCode : undefined} />
+        ) : (
+          <motion.div 
+            className="feed"
+            initial="hidden"
+            animate="visible"
+            variants={{
+              visible: {
+                transition: {
+                  staggerChildren: 0.05
+                }
+              }
+            }}
+          >
+            {feed.map((e, i) => {
+              const dt = new Date(e.t).toLocaleTimeString()
+              const itemVariants = {
+                hidden: { opacity: 0, x: -10 },
+                visible: { opacity: 1, x: 0 }
+              }
+              
+              if (e.type === 'sign') {
+                const val = e.payload?.value ?? e.value ?? ''
+                return (
+                  <motion.div 
+                    key={i} 
+                    className="feed-item"
+                    variants={itemVariants}
+                  >
+                    <strong>{dt}</strong>: Recognized {val}
+                  </motion.div>
+                )
+              }
+              if (e.type === 'mood') {
+                const val = e.payload?.value ?? e.value ?? ''
+                return (
+                  <motion.div 
+                    key={i} 
+                    className="feed-item"
+                    variants={itemVariants}
+                  >
+                    <strong>{dt}</strong>: Mood {val}
+                  </motion.div>
+                )
+              }
+              return (
+                <motion.div 
+                  key={i} 
+                  className="feed-item"
+                  variants={itemVariants}
+                >
+                  <strong>{dt}</strong>: {e.type}
+                </motion.div>
+              )
+            })}
+          </motion.div>
+        )}
       </div>
 
       <div className="card">
@@ -185,7 +236,9 @@ export default function ParentDashboard() {
           <button className="secondary" onClick={() => askEndpoint('/ask-daily', 'Suggest 3 playful daily practice ideas for child sign learning.')} disabled={loading}>Daily ideas</button>
           <button className="secondary" onClick={() => askEndpoint('/ask-insights', 'Given recent sign practice, list 3 next steps for the parent.')} disabled={loading}>Next steps</button>
         </div>
-        <div className="ai">{aiText}</div>
+        <div className="ai">
+          {loading ? <Skeleton variant="text" lines={3} /> : aiText}
+        </div>
       </div>
     </section>
   )

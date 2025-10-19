@@ -1,0 +1,360 @@
+/**
+ * Button Component Styles
+ * Modern, professional button styling with variants and states
+ */
+
+/* ========================================
+   Base Button Styles
+   ======================================== */
+.btn {
+  /* Reset */
+  margin: 0;
+  border: none;
+  background: none;
+  font-family: var(--font-display);
+  cursor: pointer;
+  user-select: none;
+  
+  /* Layout */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  
+  /* Typography */
+  font-weight: var(--weight-bold);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  
+  /* Visual */
+  border-radius: var(--space-3);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden; /* For ripple effect */
+  
+  /* Accessibility */
+  outline: none;
+  position: relative;
+}
+
+.btn:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+/* Enhanced press animation with haptic-style feedback */
+.btn:active:not(.btn--disabled):not(.btn--loading) {
+  transform: scale(0.96);
+  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ========================================
+   Size Variants
+   ======================================== */
+.btn--sm {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  min-height: 32px;
+  border-radius: var(--space-2);
+}
+
+.btn--md {
+  padding: var(--space-3) var(--space-6);
+  font-size: var(--text-body);
+  min-height: 40px;
+}
+
+.btn--lg {
+  padding: var(--space-4) var(--space-8);
+  font-size: var(--text-h4);
+  min-height: 48px;
+  border-radius: var(--space-3);
+}
+
+.btn--xl {
+  padding: var(--space-5) var(--space-10);
+  font-size: var(--text-h4);
+  min-height: 56px;
+  border-radius: var(--space-3);
+  font-weight: var(--weight-extrabold);
+}
+
+/* ========================================
+   Primary Variant (Default)
+   ======================================== */
+.btn--primary {
+  background: var(--gradient-primary);
+  color: #ffffff;
+  box-shadow: 0 var(--space-2) var(--space-6) rgba(79, 70, 229, 0.3);
+}
+
+.btn--primary:hover:not(.btn--disabled):not(.btn--loading) {
+  transform: translateY(-1px);
+  box-shadow: 0 var(--space-3) var(--space-8) rgba(79, 70, 229, 0.35);
+}
+
+.btn--primary:active:not(.btn--disabled):not(.btn--loading) {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 var(--space-1) var(--space-3) rgba(79, 70, 229, 0.25);
+}
+
+/* ========================================
+   Secondary Variant
+   ======================================== */
+.btn--secondary {
+  background: #ffffff;
+  color: var(--ink);
+  border: 2px solid var(--border);
+  box-shadow: 0 var(--space-1) var(--space-3) rgba(0, 0, 0, 0.05);
+}
+
+.btn--secondary:hover:not(.btn--disabled):not(.btn--loading) {
+  border-color: var(--primary);
+  box-shadow: 0 var(--space-2) var(--space-4) rgba(79, 70, 229, 0.15);
+}
+
+.btn--secondary:active:not(.btn--disabled):not(.btn--loading) {
+  transform: scale(0.98);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* ========================================
+   Outline Variant
+   ======================================== */
+.btn--outline {
+  background: transparent;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+}
+
+.btn--outline:hover:not(.btn--disabled):not(.btn--loading) {
+  background: rgba(79, 70, 229, 0.08);
+  border-color: var(--primary-dark);
+  color: var(--primary-dark);
+}
+
+.btn--outline:active:not(.btn--disabled):not(.btn--loading) {
+  background: rgba(79, 70, 229, 0.12);
+}
+
+/* ========================================
+   Ghost Variant
+   ======================================== */
+.btn--ghost {
+  background: transparent;
+  color: var(--ink);
+}
+
+.btn--ghost:hover:not(.btn--disabled):not(.btn--loading) {
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.btn--ghost:active:not(.btn--disabled):not(.btn--loading) {
+  background: rgba(15, 23, 42, 0.08);
+}
+
+/* ========================================
+   Danger Variant
+   ======================================== */
+.btn--danger {
+  background: var(--danger);
+  color: #ffffff;
+  box-shadow: 0 var(--space-2) var(--space-4) rgba(220, 38, 38, 0.3);
+}
+
+.btn--danger:hover:not(.btn--disabled):not(.btn--loading) {
+  background: #B91C1C;
+  box-shadow: 0 var(--space-3) var(--space-6) rgba(220, 38, 38, 0.4);
+}
+
+.btn--danger:active:not(.btn--disabled):not(.btn--loading) {
+  background: #991B1B;
+}
+
+/* ========================================
+   States
+   ======================================== */
+.btn--disabled,
+.btn--loading {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.btn--loading {
+  position: relative;
+  color: transparent !important;
+}
+
+/* ========================================
+   Loading Spinner
+   ======================================== */
+.btn__spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  height: 1em;
+  font-size: 1.25em;
+}
+
+.btn__spinner svg {
+  width: 100%;
+  height: 100%;
+  animation: btn-spin 0.8s linear infinite;
+}
+
+.btn__spinner-circle {
+  stroke-dasharray: 50;
+  stroke-dashoffset: 25;
+  stroke-linecap: round;
+  opacity: 0.8;
+}
+
+/* Primary button spinner (white) */
+.btn--primary .btn__spinner {
+  color: #ffffff;
+}
+
+/* Secondary/Outline button spinner (primary color) */
+.btn--secondary .btn__spinner,
+.btn--outline .btn__spinner {
+  color: var(--primary);
+}
+
+/* Ghost button spinner */
+.btn--ghost .btn__spinner {
+  color: var(--ink);
+}
+
+/* Danger button spinner (white) */
+.btn--danger .btn__spinner {
+  color: #ffffff;
+}
+
+@keyframes btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ========================================
+   Icon Styles
+   ======================================== */
+.btn__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25em;
+}
+
+.btn__icon--left {
+  margin-right: calc(var(--space-1) * -1);
+}
+
+.btn__icon--right {
+  margin-left: calc(var(--space-1) * -1);
+}
+
+/* Icon-only buttons (no text) */
+.btn--icon-only {
+  padding: var(--space-3);
+  aspect-ratio: 1;
+}
+
+.btn--icon-only.btn--sm {
+  padding: var(--space-2);
+}
+
+.btn--icon-only.btn--lg {
+  padding: var(--space-4);
+}
+
+.btn--icon-only.btn--xl {
+  padding: var(--space-5);
+}
+
+.btn--icon-only .btn__icon {
+  margin: 0;
+}
+
+/* ========================================
+   Full Width
+   ======================================== */
+.btn--full-width {
+  width: 100%;
+}
+
+/* ========================================
+   Dark Mode Support
+   ======================================== */
+@media (prefers-color-scheme: dark) {
+  .btn--secondary {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+  }
+  
+  .btn--secondary:hover:not(.btn--disabled):not(.btn--loading) {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--primary-light);
+  }
+  
+  .btn--ghost {
+    color: rgba(255, 255, 255, 0.9);
+  }
+  
+  .btn--ghost:hover:not(.btn--disabled):not(.btn--loading) {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .btn--outline {
+    border-color: var(--primary-light);
+    color: var(--primary-light);
+  }
+}
+
+/* ========================================
+   Accessibility - Reduced Motion
+   ======================================== */
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: none;
+  }
+  
+  .btn__spinner svg {
+    animation: none;
+  }
+  
+  .btn:active:not(.btn--disabled):not(.btn--loading) {
+    transform: none;
+  }
+  
+  .btn__ripple {
+    display: none;
+  }
+}
+
+/* ========================================
+   Ripple Effect (Micro-interaction)
+   ======================================== */
+.btn__ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+  transform: scale(0);
+  animation: btn-ripple-effect 0.6s ease-out;
+}
+
+@keyframes btn-ripple-effect {
+  to {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
