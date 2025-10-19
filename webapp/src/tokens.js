@@ -98,8 +98,8 @@ export const spacing = {
  */
 export const typography = {
   // Font Families
-  fontDisplay: "'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-  fontBody: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  fontDisplay: "'TeX Gyre Pagella', Georgia, serif",
+  fontBody: "'TeX Gyre Pagella', Georgia, serif",
   
   // Font Sizes (use CSS variables for fluid scaling)
   size: {

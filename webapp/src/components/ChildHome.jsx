@@ -1,20 +1,7 @@
 /**
- * ChildHome Component
+ * ChildHome Component - Redesigned
  * 
- * Main view for child users featuring interactive sign language practice.
- * 
- * Features:
- * - Real-time camera-based sign recognition with MediaPipe
- * - Goal tracking with daily star challenges
- * - Unlockable sticker rewards based on progress
- * - Character selection (Otter, Panda, Fox, Dino)
- * - Parent pairing via unique code system
- * - Persistent data storage in localStorage/sessionStorage
- * 
- * Data Flow:
- * - Stars/progress stored in localStorage (survives page refresh)
- * - Parent pairing code stored in sessionStorage (session-only)
- * - Custom 'starsUpdated' event syncs UI when stars change
+ * Playful, engaging view for child users featuring interactive sign language practice.
  */
 import React, { useState, useEffect } from 'react'
 import CameraPanel from './CameraPanel.jsx'
@@ -23,17 +10,13 @@ import StickerBook from './StickerBook.jsx'
 import CharacterPicker from './CharacterPicker.jsx'
 
 export default function ChildHome() {
-  // Pairing state
-  const [code, setCode] = useState('') // Parent-provided pairing code
-  const [status, setStatus] = useState('') // Connection status feedback
-  
-  // Camera and gameplay state
-  const [cameraOn, setCameraOn] = useState(false) // Toggle for CameraPanel visibility
-  const [avatar, setAvatar] = useState(() => localStorage.getItem('avatar') || 'otter') // Selected character
-  const [stars, setStars] = useState(() => Number(localStorage.getItem('stars') || '0')) // Total stars earned
-  const DAILY_GOAL = 10 // Stars needed to complete daily challenge
+  const [code, setCode] = useState('')
+  const [status, setStatus] = useState('')
+  const [cameraOn, setCameraOn] = useState(false)
+  const [avatar, setAvatar] = useState(() => localStorage.getItem('avatar') || 'otter')
+  const [stars, setStars] = useState(() => Number(localStorage.getItem('stars') || '0'))
+  const DAILY_GOAL = 10
 
-  /** Connect to parent dashboard using pairing code */
   async function join() {
     const c = code.trim()
     if (!c) return
@@ -48,65 +31,159 @@ export default function ChildHome() {
     }
   }
 
-  /** Listen for star updates from CameraPanel/other components */
   useEffect(() => {
     function onStars(e) { setStars(Number(localStorage.getItem('stars') || '0')) }
     window.addEventListener('starsUpdated', onStars)
     return () => window.removeEventListener('starsUpdated', onStars)
   }, [])
 
-  /** Update avatar selection and persist to localStorage */
   function chooseAvatar(id) {
     setAvatar(id)
     try { localStorage.setItem('avatar', id) } catch {}
   }
+
+  const avatarEmoji = avatar === 'otter' ? '🦦' : avatar === 'panda' ? '🐼' : avatar === 'fox' ? '🦊' : '🦕'
+  const progress = Math.min(100, Math.round((stars / DAILY_GOAL) * 100))
+  const starsLeft = Math.max(0, DAILY_GOAL - stars)
+
   return (
-    <section className="view child">
-      <div className="hero">
-        <div className="hero-left">
-          <div className="avatar-badge" aria-label={`Avatar ${avatar}`}>{avatar === 'otter' ? '🦦' : avatar === 'panda' ? '🐼' : avatar === 'fox' ? '🦊' : '🦕'}</div>
-          <div>
-            <h2>Today’s Adventure</h2>
-            <p className="muted">Practice a sign and earn a reward!</p>
-            <div className="row">
-              {!cameraOn ? (
-                <button className="primary" onClick={() => setCameraOn(true)}>Start Adventure</button>
-              ) : (
-                <button className="secondary" onClick={() => setCameraOn(false)}>Stop Camera</button>
-              )}
+    <section className="child-view">
+      {/* Hero Section */}
+      <div className="child-hero">
+        <div className="child-hero-content">
+          <div className="child-greeting">
+            <div className="child-avatar-lg">{avatarEmoji}</div>
+            <div>
+              <h1 className="child-title">Let's Learn Signs!</h1>
+              <p className="child-subtitle">Practice and earn stars for your sticker collection</p>
+            </div>
+          </div>
+          
+          <div className="child-stats-row">
+            <div className="child-stat-card primary">
+              <div className="stat-icon">⭐</div>
+              <div className="stat-content">
+                <div className="stat-value">{stars}</div>
+                <div className="stat-label">Stars Today</div>
+              </div>
+            </div>
+            <div className="child-stat-card secondary">
+              <div className="stat-icon">🎯</div>
+              <div className="stat-content">
+                <div className="stat-value">{progress}%</div>
+                <div className="stat-label">Daily Goal</div>
+              </div>
+            </div>
+            <div className="child-stat-card accent">
+              <div className="stat-icon">🎨</div>
+              <div className="stat-content">
+                <div className="stat-value">{Math.floor(stars / 2)}</div>
+                <div className="stat-label">Stickers</div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-      <div className="grid" style={{ alignItems: 'center' }}>
-        <div className="card">
-          <h3>Your Goal</h3>
-          <div className="row" style={{ gap: 16 }}>
-            <GoalRing value={stars} goal={DAILY_GOAL} />
-            <div>
-              <div className="mascot-callout"><span className="bubble">You’ve got this!</span></div>
-              <p className="muted">Earn {DAILY_GOAL - Math.min(stars, DAILY_GOAL)} more stars to reach today’s goal.</p>
+
+      {/* Main Content Grid */}
+      <div className="child-content">
+        {/* Practice Card */}
+        <div className="child-card practice-card">
+          <div className="card-header">
+            <h2>🎮 Practice Zone</h2>
+            <p className="card-subtitle">Show me a sign to earn stars!</p>
+          </div>
+          
+          <div className="practice-actions">
+            {!cameraOn ? (
+              <button className="btn-primary large pulse-btn" onClick={() => setCameraOn(true)}>
+                <span className="btn-icon">📸</span>
+                Start Adventure
+              </button>
+            ) : (
+              <button className="btn-secondary large" onClick={() => setCameraOn(false)}>
+                <span className="btn-icon">⏸️</span>
+                Stop Camera
+              </button>
+            )}
+          </div>
+
+          {starsLeft > 0 && (
+            <div className="encouragement-box">
+              <span className="encouragement-emoji">💪</span>
+              <p>Only <strong>{starsLeft} more stars</strong> to complete today's goal!</p>
+            </div>
+          )}
+
+          {stars >= DAILY_GOAL && (
+            <div className="success-box">
+              <span className="success-emoji">🎉</span>
+              <p><strong>Amazing!</strong> You've completed today's goal!</p>
+            </div>
+          )}
+        </div>
+
+        {/* Goal Progress Card */}
+        <div className="child-card goal-card">
+          <div className="card-header">
+            <h2>🎯 Today's Goal</h2>
+          </div>
+          
+          <div className="goal-visual">
+            <GoalRing value={stars} goal={DAILY_GOAL} size={120} stroke={12} />
+            <div className="goal-details">
+              <div className="goal-message">
+                {stars === 0 && <p>Let's get started! 🚀</p>}
+                {stars > 0 && stars < DAILY_GOAL / 2 && <p>Great start! Keep going! 💫</p>}
+                {stars >= DAILY_GOAL / 2 && stars < DAILY_GOAL && <p>You're halfway there! 🌟</p>}
+                {stars >= DAILY_GOAL && <p>Goal complete! You're a star! ⭐</p>}
+              </div>
             </div>
           </div>
         </div>
-        <div className="card">
-          <h3>Sticker Book</h3>
+
+        {/* Sticker Collection */}
+        <div className="child-card stickers-card">
+          <div className="card-header">
+            <h2>🎨 Sticker Collection</h2>
+            <p className="card-subtitle">Unlock stickers as you earn stars!</p>
+          </div>
           <StickerBook stars={stars} max={DAILY_GOAL} />
         </div>
-      </div>
-      <div className="card" style={{ marginTop: 12 }}>
-        <h3>Choose Your Character</h3>
-        <CharacterPicker value={avatar} onChange={chooseAvatar} />
-      </div>
-      {cameraOn && <CameraPanel />}
-      <div className="card" style={{ marginTop: 12 }}>
-        <h3>Connect to Parent</h3>
-        <div className="row">
-          <input value={code} onChange={e => setCode(e.target.value)} placeholder="Enter Parent Code" />
-          <button className="secondary" onClick={join}>Join</button>
+
+        {/* Character Selection */}
+        <div className="child-card character-card">
+          <div className="card-header">
+            <h2>✨ Choose Your Friend</h2>
+            <p className="card-subtitle">Pick your learning buddy</p>
+          </div>
+          <CharacterPicker value={avatar} onChange={chooseAvatar} />
         </div>
-        <div className="status">{status}</div>
+
+        {/* Parent Connection */}
+        <details className="child-card settings-card">
+          <summary className="settings-header">
+            <h3>⚙️ Parent Connection</h3>
+          </summary>
+          <div className="settings-content">
+            <p className="settings-description">Ask your parent for the connection code</p>
+            <div className="connection-row">
+              <input 
+                type="text" 
+                value={code} 
+                onChange={e => setCode(e.target.value)} 
+                placeholder="Enter code..." 
+                className="connection-input"
+              />
+              <button className="btn-secondary" onClick={join}>Connect</button>
+            </div>
+            {status && <div className="connection-status">{status}</div>}
+          </div>
+        </details>
       </div>
+
+      {/* Camera Panel Overlay */}
+      {cameraOn && <CameraPanel />}
     </section>
   )
 }

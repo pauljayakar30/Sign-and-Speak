@@ -1,0 +1,618 @@
+/**
+ * Training Page Styles - Complete Redesign
+ * Interactive, gamified learning experience
+ */
+
+/* ========================================
+   TRAINING VIEW - MAIN CONTAINER
+   ======================================== */
+
+.training-view {
+	max-width: 1400px;
+	margin: 0 auto;
+	padding: var(--space-4);
+}
+
+/* ========================================
+   HEADER SECTION
+   ======================================== */
+
+.training-header {
+	background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 50%, #FCD34D 100%);
+	border-radius: var(--space-6);
+	padding: var(--space-6);
+	margin-bottom: var(--space-6);
+	box-shadow: 0 4px 20px rgba(245, 158, 11, 0.2);
+	border: 2px solid rgba(245, 158, 11, 0.3);
+}
+
+.training-title-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: var(--space-4);
+}
+
+.training-title {
+	font-size: var(--text-h1);
+	font-weight: 800;
+	color: var(--ink);
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+}
+
+.training-progress-badge {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	padding: var(--space-2) var(--space-4);
+	background: white;
+	border-radius: var(--space-6);
+	border: 2px solid var(--accent);
+	font-size: var(--text-sm);
+	font-weight: var(--weight-bold);
+	color: var(--accent-light);
+}
+
+.progress-bar-container {
+	background: white;
+	border-radius: var(--space-6);
+	padding: var(--space-3);
+	box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.progress-bar {
+	height: 20px;
+	background: linear-gradient(90deg, #10B981, #059669);
+	border-radius: var(--space-6);
+	transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+	position: relative;
+	overflow: hidden;
+}
+
+.progress-bar::after {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+	animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+	0% { transform: translateX(-100%); }
+	100% { transform: translateX(100%); }
+}
+
+.progress-text {
+	text-align: center;
+	margin-top: var(--space-2);
+	font-size: var(--text-sm);
+	font-weight: var(--weight-bold);
+	color: var(--muted);
+}
+
+/* ========================================
+   MAIN CONTENT GRID
+   ======================================== */
+
+.training-content {
+	display: grid;
+	grid-template-columns: 1fr 350px;
+	gap: var(--space-5);
+	margin-bottom: var(--space-5);
+}
+
+.training-card {
+	background: white;
+	border-radius: var(--space-5);
+	padding: var(--space-6);
+	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+	border: 2px solid rgba(0, 0, 0, 0.05);
+}
+
+.training-card-header {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	margin-bottom: var(--space-5);
+	padding-bottom: var(--space-4);
+	border-bottom: 2px solid var(--border-light);
+}
+
+.training-card-icon {
+	font-size: 28px;
+}
+
+.training-card-title {
+	font-size: var(--text-h3);
+	font-weight: 800;
+	color: var(--ink);
+	margin: 0;
+}
+
+/* ========================================
+   SIGN SELECTOR CARD
+   ======================================== */
+
+.sign-selector-card {
+	background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
+	border-color: rgba(14, 165, 233, 0.2);
+}
+
+.current-sign-display {
+	background: white;
+	border-radius: var(--space-4);
+	padding: var(--space-6);
+	text-align: center;
+	margin-bottom: var(--space-5);
+	border: 3px dashed var(--primary);
+}
+
+.current-sign-label {
+	font-size: var(--text-xs);
+	color: var(--muted);
+	font-weight: var(--weight-bold);
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	margin-bottom: var(--space-2);
+}
+
+.current-sign-name {
+	font-size: clamp(2rem, 4vw, 3rem);
+	font-weight: 800;
+	color: var(--primary);
+	margin-bottom: var(--space-3);
+}
+
+.current-sign-status {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-2);
+	padding: var(--space-2) var(--space-4);
+	border-radius: var(--space-6);
+	font-size: var(--text-sm);
+	font-weight: var(--weight-bold);
+}
+
+.current-sign-status.learned {
+	background: rgba(16, 185, 129, 0.1);
+	color: var(--secondary);
+	border: 2px solid var(--secondary);
+}
+
+.current-sign-status.learning {
+	background: rgba(245, 158, 11, 0.1);
+	color: var(--accent);
+	border: 2px solid var(--accent);
+}
+
+.sign-selector-label {
+	font-size: var(--text-sm);
+	color: var(--muted);
+	font-weight: var(--weight-semibold);
+	margin-bottom: var(--space-2);
+}
+
+.sign-selector-dropdown {
+	width: 100%;
+	padding: var(--space-3) var(--space-4);
+	border: 2px solid var(--border);
+	border-radius: var(--space-3);
+	font-size: var(--text-body);
+	font-family: inherit;
+	font-weight: var(--weight-semibold);
+	background: white;
+	cursor: pointer;
+	transition: all 0.2s;
+}
+
+.sign-selector-dropdown:focus {
+	outline: none;
+	border-color: var(--primary);
+	box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.sign-hint {
+	background: rgba(99, 102, 241, 0.05);
+	border-left: 4px solid var(--primary);
+	padding: var(--space-3) var(--space-4);
+	border-radius: var(--space-2);
+	margin-top: var(--space-4);
+}
+
+.sign-hint-text {
+	font-size: var(--text-sm);
+	color: var(--ink);
+	margin: 0;
+	line-height: 1.6;
+}
+
+.recent-detection {
+	margin-top: var(--space-4);
+	padding: var(--space-3);
+	background: rgba(16, 185, 129, 0.05);
+	border-radius: var(--space-3);
+	text-align: center;
+}
+
+.recent-detection-text {
+	font-size: var(--text-sm);
+	color: var(--muted);
+	margin: 0 0 var(--space-1);
+}
+
+.recent-detection-value {
+	font-size: var(--text-lg);
+	font-weight: var(--weight-bold);
+	color: var(--secondary);
+	margin: 0;
+}
+
+/* ========================================
+   CALIBRATION CARD
+   ======================================== */
+
+.calibration-card {
+	background: linear-gradient(135deg, #FAF5FF 0%, #F3E8FF 100%);
+	border-color: rgba(168, 85, 247, 0.2);
+}
+
+.calibration-status {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: var(--space-4);
+	background: white;
+	border-radius: var(--space-3);
+	margin-bottom: var(--space-4);
+}
+
+.calibration-label {
+	font-size: var(--text-sm);
+	color: var(--muted);
+	font-weight: var(--weight-semibold);
+}
+
+.calibration-value {
+	font-size: var(--text-h3);
+	font-weight: 800;
+	color: #A855F7;
+}
+
+.calibration-actions {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+}
+
+.calibration-info {
+	background: rgba(168, 85, 247, 0.05);
+	border-left: 4px solid #A855F7;
+	padding: var(--space-3);
+	border-radius: var(--space-2);
+	margin-top: var(--space-4);
+}
+
+.calibration-info-text {
+	font-size: var(--text-xs);
+	color: var(--muted);
+	margin: 0;
+	line-height: 1.5;
+}
+
+/* ========================================
+   CHECKLIST CARD
+   ======================================== */
+
+.checklist-card {
+	background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+	border-color: rgba(16, 185, 129, 0.2);
+}
+
+.checklist-items {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.checklist-item {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	padding: var(--space-3);
+	background: white;
+	border-radius: var(--space-3);
+	margin-bottom: var(--space-2);
+	border: 2px solid transparent;
+	transition: all 0.2s;
+}
+
+.checklist-item:hover {
+	border-color: var(--secondary);
+}
+
+.checklist-item.completed {
+	background: rgba(16, 185, 129, 0.05);
+	border-color: var(--secondary);
+}
+
+.checklist-icon {
+	font-size: 24px;
+	line-height: 1;
+}
+
+.checklist-text {
+	flex: 1;
+	font-size: var(--text-body);
+	font-weight: var(--weight-semibold);
+	color: var(--ink);
+	margin: 0;
+}
+
+.checklist-item.completed .checklist-text {
+	color: var(--secondary);
+}
+
+/* ========================================
+   CAMERA SECTION
+   ======================================== */
+
+.camera-section {
+	grid-column: 1 / -1;
+	background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+	border-radius: var(--space-5);
+	padding: var(--space-6);
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+	border: 2px solid rgba(99, 102, 241, 0.3);
+}
+
+.camera-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: var(--space-4);
+}
+
+.camera-title {
+	font-size: var(--text-h3);
+	font-weight: 800;
+	color: white;
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+}
+
+.camera-live-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-2);
+	padding: var(--space-1) var(--space-3);
+	background: rgba(239, 68, 68, 0.2);
+	border: 1px solid #EF4444;
+	border-radius: var(--space-6);
+	font-size: var(--text-xs);
+	font-weight: var(--weight-bold);
+	color: #EF4444;
+}
+
+.live-dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: #EF4444;
+	animation: pulse-live 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-live {
+	0%, 100% { opacity: 1; transform: scale(1); }
+	50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* ========================================
+   SIGN GRID
+   ======================================== */
+
+.sign-grid-card {
+	grid-column: 1 / -1;
+}
+
+.sign-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+	gap: var(--space-3);
+}
+
+.sign-grid-item {
+	background: white;
+	border: 2px solid var(--border-light);
+	border-radius: var(--space-3);
+	padding: var(--space-3);
+	text-align: center;
+	cursor: pointer;
+	transition: all 0.2s;
+	position: relative;
+}
+
+.sign-grid-item:hover {
+	border-color: var(--primary);
+	transform: translateY(-2px);
+	box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+.sign-grid-item.learned {
+	background: rgba(16, 185, 129, 0.05);
+	border-color: var(--secondary);
+}
+
+.sign-grid-item.active {
+	background: rgba(99, 102, 241, 0.1);
+	border-color: var(--primary);
+	box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.sign-grid-item.learned::after {
+	content: '✓';
+	position: absolute;
+	top: var(--space-1);
+	right: var(--space-1);
+	width: 20px;
+	height: 20px;
+	background: var(--secondary);
+	color: white;
+	border-radius: 50%;
+	font-size: 12px;
+	font-weight: bold;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.sign-grid-name {
+	font-size: var(--text-sm);
+	font-weight: var(--weight-bold);
+	color: var(--ink);
+	margin: 0;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+
+@media (max-width: 1024px) {
+	.training-content {
+		grid-template-columns: 1fr;
+	}
+
+	.sign-grid {
+		grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+	}
+}
+
+@media (max-width: 768px) {
+	.training-view {
+		padding: var(--space-4);
+		min-height: calc(100vh - 64px);
+	}
+
+	.training-header {
+		padding: var(--space-5) var(--space-4);
+		border-radius: var(--space-4);
+	}
+
+	.training-title-row {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: var(--space-4);
+	}
+
+	.training-card {
+		padding: var(--space-5);
+	}
+
+	.sign-grid {
+		grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+		gap: var(--space-3);
+	}
+	
+	.sign-option {
+		min-height: 48px;
+		padding: var(--space-3);
+		font-size: 0.9375rem;
+	}
+
+	.current-sign-name {
+		font-size: clamp(1.75rem, 6vw, 2.25rem);
+		line-height: 1.2;
+	}
+	
+	/* Camera view optimization */
+	.camera-section {
+		padding: var(--space-4);
+		border-radius: var(--space-4);
+	}
+	
+	.video-feed,
+	.camera-placeholder {
+		min-height: 280px;
+		border-radius: var(--space-3);
+	}
+	
+	/* Better control buttons */
+	.training-controls {
+		gap: var(--space-3);
+		flex-wrap: wrap;
+	}
+	
+	.training-controls button {
+		min-height: 48px;
+		padding: var(--space-3) var(--space-5);
+		font-size: 1rem;
+		flex: 1;
+		min-width: 120px;
+	}
+	
+	/* Progress indicators */
+	.progress-bar {
+		height: 8px;
+		border-radius: 4px;
+	}
+	
+	.feedback-message {
+		padding: var(--space-4);
+		font-size: 1rem;
+		min-height: 56px;
+	}
+}
+
+@media (max-width: 480px) {
+	.training-view {
+		padding: var(--space-3);
+	}
+	
+	.training-title {
+		font-size: 1.5rem;
+	}
+	
+	.training-header {
+		padding: var(--space-4) var(--space-3);
+	}
+
+	.sign-grid {
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--space-2);
+	}
+	
+	.sign-option {
+		padding: var(--space-2);
+		font-size: 0.875rem;
+	}
+
+	.camera-section {
+		padding: var(--space-3);
+	}
+	
+	.video-feed,
+	.camera-placeholder {
+		min-height: 240px;
+	}
+	
+	.training-card {
+		padding: var(--space-4);
+	}
+	
+	.training-controls button {
+		min-width: 100px;
+		padding: var(--space-3) var(--space-4);
+		font-size: 0.9375rem;
+	}
+	
+	.current-sign-name {
+		font-size: 1.5rem;
+	}
+}

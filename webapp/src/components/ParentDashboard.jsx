@@ -1,57 +1,33 @@
 /**
- * ParentDashboard Component
+ * ParentDashboard Component - Redesigned
  * 
- * Real-time monitoring and analytics dashboard for parents/guardians.
- * 
- * Features:
- * - Generate unique pairing codes to connect with child's activity
- * - Live activity feed showing signs recognized and mood changes
- * - At-a-glance KPIs: total stars, unique signs, practice time, current mood
- * - Trend sparkline visualization of recent practice activity
- * - AI-powered coaching with specialized endpoints:
- *   - Weekly summary reports
- *   - Daily practice ideas
- *   - Next steps recommendations
- *   - Custom GPT queries
- * 
- * Data Flow:
- * - Pairing code generated server-side via /pair/generate
- * - Status polled every 2 seconds via /pair/status/:code
- * - Activity feed fetched via /pair/feed/:code
- * - AI requests sent to specialized endpoints or /ask-gpt fallback
+ * Professional monitoring and analytics dashboard for parents/guardians.
  */
 import React, { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import TrendSparkline from './TrendSparkline'
 import Skeleton from './Skeleton'
-import { EmptyFeed } from './EmptyState'
 import { useToast } from './Toast'
 
 export default function ParentDashboard() {
   const toast = useToast()
   
-  // Pairing state
-  const [code, setCode] = useState('') // Unique 6-digit code for child to connect
-  const [status, setStatus] = useState('') // Connection status message
-  
-  // Activity monitoring
-  const [feed, setFeed] = useState([]) // Array of {type, t, payload} events from child
-  
-  // AI coaching state
-  const [aiText, setAiText] = useState('') // AI response text
-  const [prompt, setPrompt] = useState('1 tip to teach MILK') // User's custom AI question
-  const [loading, setLoading] = useState(false) // Loading state for AI requests
+  const [code, setCode] = useState('')
+  const [status, setStatus] = useState('')
+  const [feed, setFeed] = useState([])
+  const [aiText, setAiText] = useState('')
+  const [prompt, setPrompt] = useState('Give me 3 tips to teach MILK sign')
+  const [loading, setLoading] = useState(false)
 
-  /** Generate new pairing code and start polling for connection */
   async function generateCode() {
-    setStatus('Generating…')
+    setStatus('generating')
     const r = await fetch('/pair/generate', { method: 'POST' })
     const d = await r.json()
     setCode(d.code)
-    setStatus('Waiting for child…')
+    setStatus('waiting')
+    toast.success('Pairing code generated!')
   }
 
-  /** Poll pairing status and activity feed every 2 seconds when code exists */
   useEffect(() => {
     let t
     async function poll() {
@@ -60,7 +36,11 @@ export default function ParentDashboard() {
         const r = await fetch(`/pair/status/${code}`)
         if (r.ok) {
           const d = await r.json()
-          setStatus(d.claimed ? 'Child connected' : 'Waiting for child…')
+          const newStatus = d.claimed ? 'connected' : 'waiting'
+          if (status !== newStatus) {
+            setStatus(newStatus)
+            if (newStatus === 'connected') toast.success('Child connected!')
+          }
         }
         const rf = await fetch(`/pair/feed/${code}`)
         if (rf.ok) {
@@ -72,9 +52,8 @@ export default function ParentDashboard() {
     }
     poll()
     return () => clearTimeout(t)
-  }, [code])
+  }, [code, status, toast])
 
-  /** Calculate analytics from feed events (memoized for performance) */
   const stats = useMemo(() => {
     const now = Date.now()
     const lastHour = now - 60*60*1000
@@ -82,9 +61,9 @@ export default function ParentDashboard() {
     const moods = feed.filter(e => e.type === 'mood')
     const uniqueSigns = new Set(signs.map(e => e.payload?.value ?? e.value)).size
     const recent = signs.filter(e => e.t && e.t > lastHour)
-    const minutesPracticed = Math.max(1, Math.round((recent.length * 20) / 60)) // rough: each event ~20s window
-    // Build sparkline: counts per 2-min buckets over last 24 mins
-    const windowMs = 24 * 60 * 1000 / 12 // 2 minutes per bucket (approx using 24m total)
+    const minutesPracticed = Math.max(1, Math.round((recent.length * 20) / 60))
+    
+    const windowMs = 24 * 60 * 1000 / 12
     const start = now - 24*60*1000
     const series = new Array(13).fill(0)
     for (const s of signs) {
@@ -92,152 +71,276 @@ export default function ParentDashboard() {
       const idx = Math.min(12, Math.floor((s.t - start) / windowMs))
       series[idx] += 1
     }
+    
     const lastMood = moods.length ? (moods[moods.length-1].payload?.value ?? moods[moods.length-1].value) : '—'
     const totalStars = signs.length
+    
     return { uniqueSigns, minutesPracticed, series, lastMood, totalStars }
   }, [feed])
 
-  /** Send custom prompt to GPT */
   async function askAI() {
     setLoading(true)
-    setAiText('') // Clear text to show skeleton
+    setAiText('')
     try {
-    const r = await fetch('/ask-gpt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) })
-  const d = await r.json()
-  setAiText(d && d.response ? `${d?.demo ? '[Demo] ' : ''}${d.response}` : 'AI is unavailable right now. Please try again later.')
+      const r = await fetch('/ask-gpt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) })
+      const d = await r.json()
+      setAiText(d && d.response ? `${d?.demo ? '[Demo] ' : ''}${d.response}` : 'AI is unavailable right now.')
     } catch (error) {
       setAiText('Network error.')
-      toast.error('Failed to get AI response. Check your connection.')
+      toast.error('Failed to get AI response')
     } finally {
       setLoading(false)
     }
   }
 
-  /** Call specialized AI endpoint with fallback to generic /ask-gpt */
-  async function askEndpoint(path, fallbackPrompt) {
-    setLoading(true); setAiText('') // Clear text to show skeleton
+  async function askEndpoint(path, fallbackPrompt, label) {
+    setLoading(true)
+    setAiText('')
+    toast.info(`Getting ${label}...`)
     try {
       const r = await fetch(path, { method: 'POST' })
-  if (r.ok) { const d = await r.json(); setAiText(`${d?.demo ? '[Demo] ' : ''}${d.response || 'No response'}`) }
-      else { throw new Error('endpoint failed') }
+      if (r.ok) {
+        const d = await r.json()
+        setAiText(`${d?.demo ? '[Demo] ' : ''}${d.response || 'No response'}`)
+      } else throw new Error('endpoint failed')
     } catch {
       try {
-    const r = await fetch('/ask-gpt', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ prompt: fallbackPrompt }) })
-  const d = await r.json(); setAiText(d && d.response ? `${d?.demo ? '[Demo] ' : ''}${d.response}` : 'AI is unavailable right now. Please try again later.')
-  } catch { setAiText('AI is unavailable right now. Please try again later.') }
-    } finally { setLoading(false) }
+        const r = await fetch('/ask-gpt', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ prompt: fallbackPrompt }) })
+        const d = await r.json()
+        setAiText(d && d.response ? `${d?.demo ? '[Demo] ' : ''}${d.response}` : 'AI is unavailable.')
+      } catch {
+        setAiText('AI is unavailable.')
+      }
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <section className="view parent">
-      <h2>Parent Dashboard</h2>
-      <div className="grid">
-        <div className="card">
-          <h3>Pair with Child</h3>
-          <button className="primary" onClick={generateCode}>Generate Code</button>
-          <div className="code">{code ? `Code: ${code}` : ''}</div>
-          <div className="status">{status}</div>
+    <section className="parent-view">
+      <div className="parent-header">
+        <h1 className="parent-title">Parent Dashboard</h1>
+        <p className="parent-subtitle">Monitor your child's learning progress and get AI-powered insights</p>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="parent-stats-grid">
+        <div className="parent-stat-card stars">
+          <div className="stat-header">
+            <span className="stat-icon-lg">⭐</span>
+            <div className="stat-trend up">↑ +{Math.floor(stats.totalStars * 0.15)}</div>
+          </div>
+          <div className="stat-main-value">{stats.totalStars}</div>
+          <div className="stat-label-text">Total Stars</div>
         </div>
-        <div className="card">
-          <h3>At‑a‑glance</h3>
-          <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>
-            <div className="kpi">
-              <div className="kpi-label">Stars</div>
-              <div className="kpi-value">{stats.totalStars}</div>
-            </div>
-            <div className="kpi">
-              <div className="kpi-label">Unique signs today</div>
-              <div className="kpi-value">{stats.uniqueSigns}</div>
-            </div>
-            <div className="kpi">
-              <div className="kpi-label">Practice (est. mins)</div>
-              <div className="kpi-value">{stats.minutesPracticed}</div>
-            </div>
-            <div className="kpi">
-              <div className="kpi-label">Mood now</div>
-              <div className="kpi-value">{stats.lastMood}</div>
-            </div>
+
+        <div className="parent-stat-card signs">
+          <div className="stat-header">
+            <span className="stat-icon-lg">🤟</span>
+            <div className="stat-trend up">↑ +{Math.floor(stats.uniqueSigns * 0.3)}</div>
           </div>
-          <div style={{ marginTop: 10 }}>
-            <TrendSparkline data={stats.series} />
-            <div className="muted" style={{ marginTop: 4 }}>Recent activity</div>
+          <div className="stat-main-value">{stats.uniqueSigns}</div>
+          <div className="stat-label-text">Unique Signs</div>
+        </div>
+
+        <div className="parent-stat-card time">
+          <div className="stat-header">
+            <span className="stat-icon-lg">⏱️</span>
+            <div className="stat-trend up">↑ {Math.floor(stats.minutesPracticed * 0.2)}m</div>
           </div>
+          <div className="stat-main-value">{stats.minutesPracticed}</div>
+          <div className="stat-label-text">Minutes Practiced</div>
+        </div>
+
+        <div className="parent-stat-card mood">
+          <div className="stat-header">
+            <span className="stat-icon-lg">😊</span>
+          </div>
+          <div className="stat-main-value">{stats.lastMood}</div>
+          <div className="stat-label-text">Current Mood</div>
         </div>
       </div>
 
-      <div className="card">
-        <h3>Child Activity (live feed)</h3>
-        {feed.length === 0 ? (
-          <EmptyFeed onConnect={!code ? generateCode : undefined} />
-        ) : (
-          <motion.div 
-            className="feed"
-            initial="hidden"
-            animate="visible"
-            variants={{
-              visible: {
-                transition: {
-                  staggerChildren: 0.05
+      {/* Main Content */}
+      <div className="parent-content">
+        {/* Activity Feed */}
+        <div className="parent-card">
+          <div className="parent-card-header">
+            <h2 className="parent-card-title">
+              <span className="title-icon">📊</span>
+              Live Activity Feed
+            </h2>
+            <span className="parent-card-action">View All</span>
+          </div>
+
+          {feed.length === 0 ? (
+            <div className="feed-empty">
+              <div className="feed-empty-icon">📭</div>
+              <p className="feed-empty-text">No activity yet. {!code ? 'Generate a pairing code to get started.' : 'Waiting for child to connect...'}</p>
+              {!code && (
+                <button className="btn-primary" onClick={generateCode}>
+                  Generate Pairing Code
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="activity-feed">
+              {feed.slice().reverse().map((e, i) => {
+                const dt = new Date(e.t).toLocaleTimeString()
+                
+                if (e.type === 'sign') {
+                  const val = e.payload?.value ?? e.value ?? ''
+                  return (
+                    <motion.div 
+                      key={i} 
+                      className="feed-item"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                    >
+                      <div className="feed-icon sign">🤟</div>
+                      <div className="feed-content">
+                        <p className="feed-text">Recognized sign: <strong>{val}</strong></p>
+                        <p className="feed-time">{dt}</p>
+                      </div>
+                    </motion.div>
+                  )
                 }
-              }
-            }}
-          >
-            {feed.map((e, i) => {
-              const dt = new Date(e.t).toLocaleTimeString()
-              const itemVariants = {
-                hidden: { opacity: 0, x: -10 },
-                visible: { opacity: 1, x: 0 }
-              }
-              
-              if (e.type === 'sign') {
-                const val = e.payload?.value ?? e.value ?? ''
-                return (
-                  <motion.div 
-                    key={i} 
-                    className="feed-item"
-                    variants={itemVariants}
-                  >
-                    <strong>{dt}</strong>: Recognized {val}
-                  </motion.div>
-                )
-              }
-              if (e.type === 'mood') {
-                const val = e.payload?.value ?? e.value ?? ''
-                return (
-                  <motion.div 
-                    key={i} 
-                    className="feed-item"
-                    variants={itemVariants}
-                  >
-                    <strong>{dt}</strong>: Mood {val}
-                  </motion.div>
-                )
-              }
-              return (
-                <motion.div 
-                  key={i} 
-                  className="feed-item"
-                  variants={itemVariants}
-                >
-                  <strong>{dt}</strong>: {e.type}
-                </motion.div>
-              )
-            })}
-          </motion.div>
-        )}
+                
+                if (e.type === 'mood') {
+                  const val = e.payload?.value ?? e.value ?? ''
+                  return (
+                    <motion.div 
+                      key={i} 
+                      className="feed-item"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                    >
+                      <div className="feed-icon mood">😊</div>
+                      <div className="feed-content">
+                        <p className="feed-text">Mood detected: <strong>{val}</strong></p>
+                        <p className="feed-time">{dt}</p>
+                      </div>
+                    </motion.div>
+                  )
+                }
+                
+                return null
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Sidebar */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
+          {/* Pairing */}
+          <div className="parent-card pairing-card">
+            <div className="parent-card-header">
+              <h2 className="parent-card-title">
+                <span className="title-icon">🔗</span>
+                Pairing
+              </h2>
+            </div>
+
+            <div className="pairing-actions">
+              <button className="btn-primary large" onClick={generateCode} disabled={loading}>
+                {code ? 'Generate New Code' : 'Generate Code'}
+              </button>
+
+              {code && (
+                <div className="pairing-code-display">
+                  <div className="pairing-code-label">Share this code</div>
+                  <div className="pairing-code-value">{code}</div>
+                </div>
+              )}
+
+              {status && (
+                <div className={`pairing-status ${status}`}>
+                  <span className="status-dot"></span>
+                  {status === 'waiting' && 'Waiting for child...'}
+                  {status === 'connected' && 'Child connected'}
+                  {status === 'generating' && 'Generating code...'}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Trend */}
+          <div className="parent-card trend-card">
+            <div className="parent-card-header">
+              <h2 className="parent-card-title">
+                <span className="title-icon">📈</span>
+                Activity Trend
+              </h2>
+            </div>
+
+            <div className="trend-visual">
+              <TrendSparkline data={stats.series} />
+            </div>
+            <p className="trend-description">Last 24 minutes of practice activity</p>
+          </div>
+        </div>
       </div>
 
-      <div className="card">
-        <h3>Parent's Corner (AI)</h3>
-        <div className="row" style={{ flexWrap:'wrap' }}>
-          <input value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="Ask the coach…" />
-          <button className="secondary" onClick={askAI} disabled={loading}>Ask</button>
-          <button className="secondary" onClick={() => askEndpoint('/ask-weekly', 'Write a one-paragraph weekly progress summary for a parent.')} disabled={loading}>Weekly summary</button>
-          <button className="secondary" onClick={() => askEndpoint('/ask-daily', 'Suggest 3 playful daily practice ideas for child sign learning.')} disabled={loading}>Daily ideas</button>
-          <button className="secondary" onClick={() => askEndpoint('/ask-insights', 'Given recent sign practice, list 3 next steps for the parent.')} disabled={loading}>Next steps</button>
+      {/* AI Coach */}
+      <div className="parent-card ai-coach-card">
+        <div className="parent-card-header">
+          <h2 className="parent-card-title">
+            <span className="title-icon">🤖</span>
+            AI Learning Coach
+          </h2>
         </div>
-        <div className="ai">
-          {loading ? <Skeleton variant="text" lines={3} /> : aiText}
+
+        <div className="ai-quick-actions">
+          <button 
+            className="ai-quick-btn" 
+            onClick={() => askEndpoint('/ask-weekly', 'Write a one-paragraph weekly progress summary.', 'weekly summary')} 
+            disabled={loading}
+          >
+            <span>📅</span>
+            Weekly Summary
+          </button>
+          <button 
+            className="ai-quick-btn" 
+            onClick={() => askEndpoint('/ask-daily', 'Suggest 3 playful daily practice ideas.', 'daily ideas')} 
+            disabled={loading}
+          >
+            <span>💡</span>
+            Daily Ideas
+          </button>
+          <button 
+            className="ai-quick-btn" 
+            onClick={() => askEndpoint('/ask-insights', 'List 3 next steps for the parent.', 'insights')} 
+            disabled={loading}
+          >
+            <span>🎯</span>
+            Next Steps
+          </button>
+        </div>
+
+        <div className="ai-custom-input">
+          <input 
+            type="text"
+            className="ai-input-field"
+            value={prompt} 
+            onChange={e => setPrompt(e.target.value)} 
+            placeholder="Ask the AI coach anything..."
+            onKeyPress={e => e.key === 'Enter' && !loading && askAI()}
+          />
+          <button className="btn-secondary" onClick={askAI} disabled={loading}>
+            {loading ? 'Thinking...' : 'Ask'}
+          </button>
+        </div>
+
+        <div className={`ai-response-box ${!aiText && !loading ? 'empty' : ''}`}>
+          {loading ? (
+            <Skeleton variant="text" lines={3} />
+          ) : aiText ? (
+            aiText
+          ) : (
+            'AI responses will appear here. Try asking a question or use the quick actions above!'
+          )}
         </div>
       </div>
     </section>

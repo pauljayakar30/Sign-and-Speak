@@ -1,0 +1,518 @@
+/**
+ * Child Page Styles - Complete Redesign
+ * Playful, engaging, and child-friendly design
+ */
+
+/* ========================================
+   CHILD VIEW - MAIN CONTAINER
+   ======================================== */
+
+.child-view {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: var(--space-4);
+}
+
+/* ========================================
+   HERO SECTION
+   ======================================== */
+
+.child-hero {
+	background: linear-gradient(135deg, #EEF2FF 0%, #E0F2FE 50%, #DBEAFE 100%);
+	border-radius: var(--space-6);
+	padding: var(--space-8) var(--space-6);
+	margin-bottom: var(--space-6);
+	box-shadow: 0 4px 20px rgba(79, 70, 229, 0.12);
+	border: 2px solid rgba(99, 102, 241, 0.1);
+}
+
+.child-hero-content {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-6);
+}
+
+.child-greeting {
+	display: flex;
+	align-items: center;
+	gap: var(--space-4);
+}
+
+.child-avatar-lg {
+	width: 80px;
+	height: 80px;
+	font-size: 56px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: white;
+	border-radius: 50%;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+	border: 3px solid var(--primary);
+}
+
+.child-title {
+	font-size: clamp(2rem, 4vw, 2.75rem);
+	font-weight: 800;
+	color: var(--primary);
+	margin: 0;
+	letter-spacing: -0.02em;
+}
+
+.child-subtitle {
+	font-size: var(--text-lg);
+	color: var(--muted);
+	margin: var(--space-1) 0 0;
+}
+
+/* Stats Row */
+.child-stats-row {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	gap: var(--space-4);
+}
+
+.child-stat-card {
+	background: white;
+	border-radius: var(--space-4);
+	padding: var(--space-4);
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+	border: 2px solid transparent;
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.child-stat-card:hover {
+	transform: translateY(-4px);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.child-stat-card.primary {
+	border-color: rgba(99, 102, 241, 0.2);
+}
+
+.child-stat-card.primary:hover {
+	border-color: var(--primary);
+	box-shadow: 0 8px 24px rgba(99, 102, 241, 0.25);
+}
+
+.child-stat-card.secondary {
+	border-color: rgba(5, 150, 105, 0.2);
+}
+
+.child-stat-card.secondary:hover {
+	border-color: var(--secondary);
+	box-shadow: 0 8px 24px rgba(5, 150, 105, 0.25);
+}
+
+.child-stat-card.accent {
+	border-color: rgba(217, 119, 6, 0.2);
+}
+
+.child-stat-card.accent:hover {
+	border-color: var(--accent);
+	box-shadow: 0 8px 24px rgba(217, 119, 6, 0.25);
+}
+
+.stat-icon {
+	font-size: 32px;
+	line-height: 1;
+}
+
+.stat-content {
+	flex: 1;
+}
+
+.stat-value {
+	font-size: var(--text-h2);
+	font-weight: 800;
+	color: var(--ink);
+	line-height: 1;
+	margin-bottom: var(--space-1);
+}
+
+.stat-label {
+	font-size: var(--text-sm);
+	color: var(--muted);
+	font-weight: var(--weight-semibold);
+}
+
+/* ========================================
+   CONTENT GRID
+   ======================================== */
+
+.child-content {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+	gap: var(--space-5);
+}
+
+.child-card {
+	background: white;
+	border-radius: var(--space-5);
+	padding: var(--space-6);
+	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+	border: 2px solid rgba(0, 0, 0, 0.05);
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.child-card:hover {
+	border-color: rgba(99, 102, 241, 0.2);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.card-header {
+	margin-bottom: var(--space-5);
+}
+
+.card-header h2 {
+	font-size: var(--text-h3);
+	font-weight: 800;
+	color: var(--ink);
+	margin: 0 0 var(--space-1);
+}
+
+.card-subtitle {
+	font-size: var(--text-sm);
+	color: var(--muted);
+	margin: 0;
+}
+
+/* ========================================
+   PRACTICE CARD
+   ======================================== */
+
+.practice-card {
+	grid-column: 1 / -1;
+	background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
+	border-color: rgba(14, 165, 233, 0.2);
+}
+
+.practice-actions {
+	display: flex;
+	justify-content: center;
+	margin-bottom: var(--space-4);
+}
+
+.pulse-btn {
+	animation: gentle-pulse 2s ease-in-out infinite;
+}
+
+@keyframes gentle-pulse {
+	0%, 100% { transform: scale(1); }
+	50% { transform: scale(1.05); }
+}
+
+.btn-icon {
+	font-size: 20px;
+	margin-right: var(--space-2);
+}
+
+.encouragement-box,
+.success-box {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	padding: var(--space-4);
+	border-radius: var(--space-3);
+	font-size: var(--text-body);
+}
+
+.encouragement-box {
+	background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+	border: 2px solid #FBBF24;
+	color: #78350F;
+}
+
+.success-box {
+	background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+	border: 2px solid #10B981;
+	color: #065F46;
+}
+
+.encouragement-emoji,
+.success-emoji {
+	font-size: 28px;
+	line-height: 1;
+}
+
+.encouragement-box p,
+.success-box p {
+	margin: 0;
+	font-weight: var(--weight-semibold);
+}
+
+/* ========================================
+   GOAL CARD
+   ======================================== */
+
+.goal-card {
+	background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+	border-color: rgba(245, 158, 11, 0.3);
+}
+
+.goal-visual {
+	display: flex;
+	align-items: center;
+	gap: var(--space-5);
+}
+
+.goal-details {
+	flex: 1;
+}
+
+.goal-message {
+	font-size: var(--text-lg);
+	font-weight: var(--weight-bold);
+	color: var(--ink);
+}
+
+.goal-message p {
+	margin: 0;
+}
+
+/* ========================================
+   STICKERS CARD
+   ======================================== */
+
+.stickers-card {
+	grid-column: span 1;
+	background: linear-gradient(135deg, #FCE7F3 0%, #FBCFE8 100%);
+	border-color: rgba(236, 72, 153, 0.2);
+}
+
+/* ========================================
+   CHARACTER CARD
+   ======================================== */
+
+.character-card {
+	grid-column: span 1;
+	background: linear-gradient(135deg, #E0E7FF 0%, #C7D2FE 100%);
+	border-color: rgba(99, 102, 241, 0.2);
+}
+
+/* ========================================
+   SETTINGS CARD (COLLAPSIBLE)
+   ======================================== */
+
+.settings-card {
+	grid-column: 1 / -1;
+	background: var(--bg-alt);
+	border-color: var(--border);
+	padding: 0;
+	cursor: pointer;
+}
+
+.settings-header {
+	padding: var(--space-4) var(--space-6);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	list-style: none;
+	user-select: none;
+}
+
+.settings-header::after {
+	content: '▼';
+	font-size: 12px;
+	color: var(--muted);
+	transition: transform 0.3s;
+}
+
+.settings-card[open] .settings-header::after {
+	transform: rotate(180deg);
+}
+
+.settings-header h3 {
+	font-size: var(--text-lg);
+	font-weight: var(--weight-bold);
+	color: var(--ink);
+	margin: 0;
+}
+
+.settings-content {
+	padding: 0 var(--space-6) var(--space-6);
+	animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.settings-description {
+	color: var(--muted);
+	font-size: var(--text-sm);
+	margin: 0 0 var(--space-3);
+}
+
+.connection-row {
+	display: flex;
+	gap: var(--space-3);
+	margin-bottom: var(--space-3);
+}
+
+.connection-input {
+	flex: 1;
+	padding: var(--space-3) var(--space-4);
+	border: 2px solid var(--border);
+	border-radius: var(--space-3);
+	font-size: var(--text-body);
+	font-family: inherit;
+	transition: all 0.2s;
+}
+
+.connection-input:focus {
+	outline: none;
+	border-color: var(--primary);
+	box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.connection-status {
+	padding: var(--space-2) var(--space-3);
+	background: rgba(99, 102, 241, 0.1);
+	border-radius: var(--space-2);
+	font-size: var(--text-sm);
+	color: var(--primary);
+	font-weight: var(--weight-semibold);
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+
+@media (max-width: 768px) {
+	.child-view {
+		padding: var(--space-4);
+		min-height: calc(100vh - 64px);
+	}
+
+	.child-hero {
+		padding: var(--space-6) var(--space-4);
+		margin-bottom: var(--space-5);
+		border-radius: var(--space-4);
+	}
+
+	.child-greeting {
+		flex-direction: column;
+		text-align: center;
+		gap: var(--space-4);
+	}
+
+	.child-avatar-lg {
+		width: 72px;
+		height: 72px;
+		font-size: 48px;
+	}
+
+	.child-title {
+		font-size: clamp(1.75rem, 5vw, 2.25rem);
+		line-height: 1.2;
+	}
+
+	.child-stats-row {
+		grid-template-columns: 1fr;
+		gap: var(--space-3);
+	}
+	
+	.child-stat-card {
+		min-height: 72px;
+		padding: var(--space-4);
+	}
+
+	.child-content {
+		grid-template-columns: 1fr;
+		gap: var(--space-5);
+	}
+
+	.practice-card,
+	.stickers-card,
+	.character-card,
+	.settings-card {
+		grid-column: 1;
+		min-height: 120px;
+	}
+	
+	/* Better card touch targets */
+	.practice-btn,
+	.character-option,
+	.sticker-slot {
+		min-height: 48px;
+		min-width: 48px;
+	}
+
+	.goal-visual {
+		flex-direction: column;
+		text-align: center;
+		gap: var(--space-3);
+	}
+
+	.connection-row {
+		flex-direction: column;
+		gap: var(--space-3);
+	}
+	
+	/* Optimize sticker grid for mobile */
+	.stickers-grid {
+		grid-template-columns: repeat(4, 1fr);
+		gap: var(--space-2);
+	}
+	
+	/* Better button sizing on mobile */
+	.child-card button {
+		padding: var(--space-3) var(--space-5);
+		min-height: 44px;
+		font-size: 1rem;
+	}
+}
+
+@media (max-width: 480px) {
+	.child-view {
+		padding: var(--space-3);
+	}
+	
+	.child-hero {
+		padding: var(--space-5) var(--space-3);
+		margin-bottom: var(--space-4);
+	}
+
+	.child-card {
+		padding: var(--space-4);
+	}
+	
+	.child-avatar-lg {
+		width: 64px;
+		height: 64px;
+		font-size: 42px;
+	}
+	
+	.child-title {
+		font-size: 1.5rem;
+	}
+	
+	.stickers-grid {
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--space-2);
+	}
+	
+	.child-card button {
+		padding: var(--space-3) var(--space-4);
+		font-size: 0.9375rem;
+	}
+
+	.stat-icon {
+		font-size: 24px;
+	}
+
+	.stat-value {
+		font-size: var(--text-h3);
+	}
+}

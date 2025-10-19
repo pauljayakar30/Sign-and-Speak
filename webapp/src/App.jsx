@@ -15,6 +15,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { Home, GraduationCap, Users, Target, User } from 'lucide-react'
 import ChildHome from './components/ChildHome.jsx'
 import ParentDashboard from './components/ParentDashboard.jsx'
 import NewHome from './components/NewHome.jsx'
@@ -48,11 +49,19 @@ export default function App() {
   // Mobile menu toggle
   const [menuOpen, setMenuOpen] = useState(false)
   
-  // Dark mode toggle (default: light mode)
-  const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem('darkMode')
-    return saved === 'true' ? true : false
+  // Sidebar collapse state (default collapsed to icon-only view)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    const saved = localStorage.getItem('sidebarCollapsed')
+    return saved !== null ? saved === 'true' : true
   })
+  
+  // Persist sidebar state to localStorage
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', sidebarCollapsed)
+  }, [sidebarCollapsed])
+  
+  // Toggle sidebar collapse
+  const toggleSidebar = () => setSidebarCollapsed(prev => !prev)
   
   // Respect user's motion preferences for accessibility
   const prefersReduced = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -69,17 +78,6 @@ export default function App() {
     const iv = setInterval(() => setAvatar(localStorage.getItem('avatar') || ''), 1000)
     return () => { window.removeEventListener('storage', onStorage); clearInterval(iv) }
   }, [])
-
-  // Manage dark mode
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark-mode')
-      localStorage.setItem('darkMode', 'true')
-    } else {
-      document.documentElement.classList.remove('dark-mode')
-      localStorage.setItem('darkMode', 'false')
-    }
-  }, [darkMode])
 
   // Enhanced animation variants for smooth page transitions
   const variants = useMemo(() => ({
@@ -111,85 +109,89 @@ export default function App() {
   return (
     <ToastProvider>
       <div className="app">
-        {/* Floating Navigation Bar */}
-        <header className={`app-header glass`}> 
-        <div className="nav-inner">
-          {/* Brand Logo and Title */}
-          <div className="brand">
-            <img src="/design/assets/logo.svg" alt="Sign & Speak logo" width={28} height={28} />
-            <h1>Sign & Speak</h1>
-          </div>
-
-          {/* Mobile Hamburger Menu */}
-          <button className="hamburger" aria-label="Open menu" onClick={() => setMenuOpen(v => !v)}>
-            <span />
-            <span />
-            <span />
-          </button>
-
-          {/* Navigation Tabs */}
-          <nav className={`tabs seg ${menuOpen ? 'open' : ''}`}>
-            <TabButton id="home" current={tab} onClick={(id)=>{ setTab(id); setMenuOpen(false) }}>Home</TabButton>
-            <TabButton id="child" current={tab} onClick={(id)=>{ setTab(id); setMenuOpen(false) }}>Child</TabButton>
-            <TabButton id="parent" current={tab} onClick={(id)=>{ setTab(id); setMenuOpen(false) }}>Parent</TabButton>
-            <TabButton id="train" current={tab} onClick={(id)=>{ setTab(id); setMenuOpen(false) }}>Train</TabButton>
-          </nav>
-
-          {/* Status Badges (Demo mode, Avatar, Dark Mode Toggle) */}
+        {/* Top Header Bar (Gemini Style) */}
+        <header className="app-header">
+          <h1 className="app-title">Sign & Speak</h1>
           <div className="header-actions">
-            {envOk?.demoMode && (
-              <div className="badge pill" title="AI replies are simulated for demo">Demo</div>
-            )}
-            {avatar && <div className="avatar-badge sm" title="Current character" aria-label="Current character">{avatar === 'otter' ? '🦦' : avatar === 'panda' ? '🐼' : avatar === 'fox' ? '🦊' : '🦕'}</div>}
-            
-            {/* Dark Mode Toggle */}
-            <button 
-              className="theme-toggle" 
-              onClick={() => setDarkMode(prev => !prev)}
-              aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-              title={darkMode ? 'Light mode' : 'Dark mode'}
-            >
-              {darkMode ? '☀️' : '🌙'}
-            </button>
+            {/* Future: search, settings, etc. */}
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Main Content Area with Page Transitions */}
-      <main>
-        <AnimatePresence mode="wait">
-          {tab === 'home' && (
-            <motion.section key="home" className="view home-view" initial="enter" animate="center" exit="exit" variants={variants}>
-              <NewHome onStartChild={() => setTab('child')} onOpenParent={() => setTab('parent')} />
-            </motion.section>
-          )}
+        {/* Left Sidebar Navigation */}
+        <aside className={`app-sidebar ${menuOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : 'expanded'}`}> 
+          <div className="sidebar-inner">
+            {/* Navigation Tabs */}
+            <nav className="tabs">
+              <TabButton id="home" current={tab} onClick={(id)=>{ setTab(id); setMenuOpen(false) }}>
+                <Home className="tab-icon" size={20} strokeWidth={2} />
+                <span className="tab-label">Home</span>
+              </TabButton>
+              <TabButton id="child" current={tab} onClick={(id)=>{ setTab(id); setMenuOpen(false) }}>
+                <GraduationCap className="tab-icon" size={20} strokeWidth={2} />
+                <span className="tab-label">Child</span>
+              </TabButton>
+              <TabButton id="parent" current={tab} onClick={(id)=>{ setTab(id); setMenuOpen(false) }}>
+                <Users className="tab-icon" size={20} strokeWidth={2} />
+                <span className="tab-label">Parent</span>
+              </TabButton>
+              <TabButton id="train" current={tab} onClick={(id)=>{ setTab(id); setMenuOpen(false) }}>
+                <Target className="tab-icon" size={20} strokeWidth={2} />
+                <span className="tab-label">Train</span>
+              </TabButton>
+            </nav>
 
-          {tab === 'child' && (
-            <motion.div key="child" initial="enter" animate="center" exit="exit" variants={variants}>
-              <ChildHome />
-            </motion.div>
-          )}
-          {tab === 'parent' && (
-            <motion.div key="parent" initial="enter" animate="center" exit="exit" variants={variants}>
-              <ParentDashboard />
-            </motion.div>
-          )}
-          {tab === 'train' && (
-            <motion.div key="train" initial="enter" animate="center" exit="exit" variants={variants}>
-              <TrainingMode />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
+            {/* Avatar Badge at Bottom */}
+            <div className="sidebar-actions">
+              <User className="avatar-icon" size={20} strokeWidth={2} />
+              <span className="avatar-label">
+                {avatar ? `${avatar.charAt(0).toUpperCase() + avatar.slice(1)}` : 'Guest'}
+              </span>
+            </div>
+          </div>
+        </aside>
 
-      {/* Privacy Footer */}
-      <footer className="app-footer">
-        <small>Built for learning and communication. Camera data stays in your browser.</small>
-      </footer>
+        {/* Mobile Hamburger Menu */}
+        <button className="hamburger" aria-label="Toggle menu" onClick={() => setMenuOpen(v => !v)}>
+          <span />
+          <span />
+          <span />
+        </button>
 
-      {/* AI Coach Floating Widget */}
-      <CoachWidget mode={tab === 'child' ? 'child' : (tab === 'parent' ? 'parent' : 'home')} demo={Boolean(envOk?.demoMode)} />
-    </div>
+        {/* Main Content Area */}
+        <main className="app-main">
+          <AnimatePresence mode="wait">
+            {tab === 'home' && (
+              <motion.section key="home" className="view home-view" initial="enter" animate="center" exit="exit" variants={variants}>
+                <NewHome onStartChild={() => setTab('child')} onOpenParent={() => setTab('parent')} />
+              </motion.section>
+            )}
+
+            {tab === 'child' && (
+              <motion.div key="child" initial="enter" animate="center" exit="exit" variants={variants}>
+                <ChildHome />
+              </motion.div>
+            )}
+            {tab === 'parent' && (
+              <motion.div key="parent" initial="enter" animate="center" exit="exit" variants={variants}>
+                <ParentDashboard />
+              </motion.div>
+            )}
+            {tab === 'train' && (
+              <motion.div key="train" initial="enter" animate="center" exit="exit" variants={variants}>
+                <TrainingMode />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Privacy Footer */}
+          <footer className="app-footer">
+            <small>Built for learning and communication. Camera data stays in your browser.</small>
+          </footer>
+        </main>
+
+        {/* AI Coach Floating Widget */}
+        <CoachWidget mode={tab === 'child' ? 'child' : (tab === 'parent' ? 'parent' : 'home')} demo={Boolean(envOk?.demoMode)} />
+      </div>
     </ToastProvider>
   )
 }

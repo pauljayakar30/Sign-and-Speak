@@ -1,9 +1,42 @@
+# Dependencies
 node_modules/
+webapp/node_modules/
+
+# Environment Variables
 .env
-npm-debug.log*
-.DS_Store
+.env.local
+.env.production.local
+.env.development.local
+
+# Build Output
 dist/
 build/
+webapp/dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 *.log
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# Cache
 .cache/
+.parcel-cache/
+.vite/
+
+# Coverage Reports
 coverage/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Vercel
+.vercel
