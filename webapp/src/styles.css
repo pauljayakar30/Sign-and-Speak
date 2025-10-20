@@ -48,6 +48,41 @@ html {
 }
 
 /* ========================================
+   1.5 ACCESSIBILITY - SKIP LINKS & SR-ONLY
+   ======================================== */
+
+/* Skip link for keyboard users */
+.skip-link {
+	position: absolute;
+	top: -40px;
+	left: 0;
+	z-index: 100;
+	padding: 8px;
+	background-color: var(--primary-color, #6366f1);
+	color: white;
+	text-decoration: none;
+	font-weight: 600;
+	border-radius: 0 0 4px 0;
+}
+
+.skip-link:focus {
+	top: 0;
+	outline: 3px solid var(--accent-color, #f59e0b);
+	outline-offset: 2px;
+}
+
+/* Screen reader only content */
+.sr-only {
+	position: absolute;
+	left: -10000px;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+}
+
+/* ========================================
    2. DESIGN TOKENS
    ======================================== */
 :root { 

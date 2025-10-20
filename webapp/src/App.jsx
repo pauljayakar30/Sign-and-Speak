@@ -22,6 +22,7 @@ import NewHome from './components/NewHome.jsx'
 import CoachWidget from './components/CoachWidget.jsx'
 import TrainingMode from './components/TrainingMode.jsx'
 import { ToastProvider } from './components/Toast.jsx'
+import { useAvatar } from './contexts/AppContext.jsx'
 
 /**
  * TabButton - Navigation tab component with animated underline
@@ -43,8 +44,8 @@ export default function App() {
   // Server environment status (API key presence, demo mode)
   const [envOk, setEnvOk] = useState(null)
   
-  // Current user's selected avatar character
-  const [avatar, setAvatar] = useState(() => localStorage.getItem('avatar') || '')
+  // Current user's selected avatar character (from context)
+  const { avatar } = useAvatar()
   
   // Mobile menu toggle
   const [menuOpen, setMenuOpen] = useState(false)
@@ -71,13 +72,7 @@ export default function App() {
     fetch('/env-ok').then(r => r.json()).then(setEnvOk).catch(() => setEnvOk({ openaiKeyPresent: false, demoMode: true }))
   }, [])
 
-  // Sync avatar across tabs and components
-  useEffect(() => {
-    function onStorage() { setAvatar(localStorage.getItem('avatar') || '') }
-    window.addEventListener('storage', onStorage)
-    const iv = setInterval(() => setAvatar(localStorage.getItem('avatar') || ''), 1000)
-    return () => { window.removeEventListener('storage', onStorage); clearInterval(iv) }
-  }, [])
+  // Avatar sync is now handled by AppContext - no more polling! 🎉
 
   // Enhanced animation variants for smooth page transitions
   const variants = useMemo(() => ({
@@ -109,8 +104,13 @@ export default function App() {
   return (
     <ToastProvider>
       <div className="app">
+        {/* Skip Link for Keyboard Users */}
+        <a href="#main-content" className="skip-link">
+          Skip to main content
+        </a>
+
         {/* Top Header Bar (Gemini Style) */}
-        <header className="app-header">
+        <header className="app-header" role="banner">
           <h1 className="app-title">Sign & Speak</h1>
           <div className="header-actions">
             {/* Future: search, settings, etc. */}
@@ -118,31 +118,35 @@ export default function App() {
         </header>
 
         {/* Left Sidebar Navigation */}
-        <aside className={`app-sidebar ${menuOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : 'expanded'}`}> 
+        <aside 
+          className={`app-sidebar ${menuOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : 'expanded'}`}
+          role="navigation"
+          aria-label="Main navigation"
+        > 
           <div className="sidebar-inner">
             {/* Navigation Tabs */}
-            <nav className="tabs">
+            <nav className="tabs" role="tablist" aria-label="Main sections">
               <TabButton id="home" current={tab} onClick={(id)=>{ setTab(id); setMenuOpen(false) }}>
-                <Home className="tab-icon" size={20} strokeWidth={2} />
+                <Home className="tab-icon" size={20} strokeWidth={2} aria-hidden="true" />
                 <span className="tab-label">Home</span>
               </TabButton>
               <TabButton id="child" current={tab} onClick={(id)=>{ setTab(id); setMenuOpen(false) }}>
-                <GraduationCap className="tab-icon" size={20} strokeWidth={2} />
+                <GraduationCap className="tab-icon" size={20} strokeWidth={2} aria-hidden="true" />
                 <span className="tab-label">Child</span>
               </TabButton>
               <TabButton id="parent" current={tab} onClick={(id)=>{ setTab(id); setMenuOpen(false) }}>
-                <Users className="tab-icon" size={20} strokeWidth={2} />
+                <Users className="tab-icon" size={20} strokeWidth={2} aria-hidden="true" />
                 <span className="tab-label">Parent</span>
               </TabButton>
               <TabButton id="train" current={tab} onClick={(id)=>{ setTab(id); setMenuOpen(false) }}>
-                <Target className="tab-icon" size={20} strokeWidth={2} />
+                <Target className="tab-icon" size={20} strokeWidth={2} aria-hidden="true" />
                 <span className="tab-label">Train</span>
               </TabButton>
             </nav>
 
             {/* Avatar Badge at Bottom */}
-            <div className="sidebar-actions">
-              <User className="avatar-icon" size={20} strokeWidth={2} />
+            <div className="sidebar-actions" role="complementary" aria-label="User profile">
+              <User className="avatar-icon" size={20} strokeWidth={2} aria-hidden="true" />
               <span className="avatar-label">
                 {avatar ? `${avatar.charAt(0).toUpperCase() + avatar.slice(1)}` : 'Guest'}
               </span>
@@ -151,14 +155,19 @@ export default function App() {
         </aside>
 
         {/* Mobile Hamburger Menu */}
-        <button className="hamburger" aria-label="Toggle menu" onClick={() => setMenuOpen(v => !v)}>
+        <button 
+          className="hamburger" 
+          aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"} 
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen(v => !v)}
+        >
           <span />
           <span />
           <span />
         </button>
 
         {/* Main Content Area */}
-        <main className="app-main">
+        <main className="app-main" id="main-content" role="main">
           <AnimatePresence mode="wait">
             {tab === 'home' && (
               <motion.section key="home" className="view home-view" initial="enter" animate="center" exit="exit" variants={variants}>

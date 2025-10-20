@@ -3,18 +3,22 @@
  * 
  * Playful, engaging view for child users featuring interactive sign language practice.
  */
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import CameraPanel from './CameraPanel.jsx'
 import GoalRing from './GoalRing.jsx'
 import StickerBook from './StickerBook.jsx'
 import CharacterPicker from './CharacterPicker.jsx'
+import { useStars, useAvatar } from '../contexts/AppContext.jsx'
 
 export default function ChildHome() {
   const [code, setCode] = useState('')
   const [status, setStatus] = useState('')
   const [cameraOn, setCameraOn] = useState(false)
-  const [avatar, setAvatar] = useState(() => localStorage.getItem('avatar') || 'otter')
-  const [stars, setStars] = useState(() => Number(localStorage.getItem('stars') || '0'))
+  
+  // Use context instead of local state and window events
+  const { avatar, updateAvatar } = useAvatar()
+  const { stars } = useStars()
+  
   const DAILY_GOAL = 10
 
   async function join() {
@@ -31,15 +35,10 @@ export default function ChildHome() {
     }
   }
 
-  useEffect(() => {
-    function onStars(e) { setStars(Number(localStorage.getItem('stars') || '0')) }
-    window.addEventListener('starsUpdated', onStars)
-    return () => window.removeEventListener('starsUpdated', onStars)
-  }, [])
+  // No more window event listeners! Context handles everything 🎉
 
   function chooseAvatar(id) {
-    setAvatar(id)
-    try { localStorage.setItem('avatar', id) } catch {}
+    updateAvatar(id)
   }
 
   const avatarEmoji = avatar === 'otter' ? '🦦' : avatar === 'panda' ? '🐼' : avatar === 'fox' ? '🦊' : '🦕'

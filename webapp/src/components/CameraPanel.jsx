@@ -1,19 +1,353 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react'
 import Skeleton from './Skeleton'
+import ErrorState from './ErrorState'
 import { useToast } from './Toast'
+import { useStars } from '../contexts/AppContext.jsx'
 
-export default function CameraPanel() {
+/**
+ * Error Types for Comprehensive Error Handling
+ */
+const ERROR_TYPES = {
+  PERMISSION_DENIED: 'PERMISSION_DENIED',
+  NO_CAMERA: 'NO_CAMERA',
+  MEDIAPIPE_FAILED: 'MEDIAPIPE_FAILED',
+  BROWSER_UNSUPPORTED: 'BROWSER_UNSUPPORTED',
+  CAMERA_CRASHED: 'CAMERA_CRASHED',
+  DETECTION_FAILED: 'DETECTION_FAILED',
+  NETWORK_ERROR: 'NETWORK_ERROR',
+  UNKNOWN: 'UNKNOWN'
+}
+
+/**
+ * Detect error type from error object
+ */
+function detectErrorType(error) {
+  const message = error?.message?.toLowerCase() || ''
+  const name = error?.name?.toLowerCase() || ''
+  
+  // Permission denied
+  if (name === 'notallowederror' || message.includes('permission denied') || message.includes('not allowed')) {
+    return ERROR_TYPES.PERMISSION_DENIED
+  }
+  
+  // No camera found
+  if (name === 'notfounderror' || message.includes('no camera') || message.includes('not found') || message.includes('requested device not found')) {
+    return ERROR_TYPES.NO_CAMERA
+  }
+  
+  // MediaPipe failed to load
+  if (message.includes('mediapipe') || message.includes('libraries not loaded') || message.includes('failed to load')) {
+    return ERROR_TYPES.MEDIAPIPE_FAILED
+  }
+  
+  // Browser unsupported
+  if (name === 'notsupportederror' || message.includes('not supported') || message.includes('getusermedia')) {
+    return ERROR_TYPES.BROWSER_UNSUPPORTED
+  }
+  
+  // Network error
+  if (message.includes('network') || message.includes('cdn') || message.includes('fetch')) {
+    return ERROR_TYPES.NETWORK_ERROR
+  }
+  
+  // Camera crashed/stopped
+  if (message.includes('crashed') || message.includes('stopped') || message.includes('aborted')) {
+    return ERROR_TYPES.CAMERA_CRASHED
+  }
+  
+  return ERROR_TYPES.UNKNOWN
+}
+
+/**
+ * Get user-friendly error message and recovery instructions
+ */
+function getErrorDetails(errorType, originalError) {
+  switch (errorType) {
+    case ERROR_TYPES.PERMISSION_DENIED:
+      return {
+        icon: '🔒',
+        title: 'Camera Permission Denied',
+        description: 'Sign & Speak needs camera access to detect sign language. Please enable camera permissions in your browser settings.',
+        instructions: [
+          'Click the camera icon in your browser address bar',
+          'Select "Always allow camera access"',
+          'Click "Try Again" below'
+        ],
+        retryText: 'Try Again',
+        canRetry: true
+      }
+    
+    case ERROR_TYPES.NO_CAMERA:
+      return {
+        icon: '📷',
+        title: 'No Camera Found',
+        description: 'We couldn\'t find a camera on your device. Make sure your webcam is connected and no other app is using it.',
+        instructions: [
+          'Check if your webcam is properly connected',
+          'Close other apps that might be using the camera',
+          'Try restarting your browser'
+        ],
+        retryText: 'Try Again',
+        canRetry: true
+      }
+    
+    case ERROR_TYPES.MEDIAPIPE_FAILED:
+      return {
+        icon: '🔌',
+        title: 'Detection Engine Failed',
+        description: 'The MediaPipe detection engine failed to load. This might be a temporary network issue.',
+        instructions: [
+          'Check your internet connection',
+          'Try refreshing the page',
+          'If problem persists, the CDN might be down'
+        ],
+        retryText: 'Retry Loading',
+        canRetry: true
+      }
+    
+    case ERROR_TYPES.BROWSER_UNSUPPORTED:
+      return {
+        icon: '🌐',
+        title: 'Browser Not Supported',
+        description: 'Your browser doesn\'t support camera access. Please use a modern browser like Chrome, Firefox, Safari, or Edge.',
+        instructions: [
+          'Update your browser to the latest version',
+          'Or switch to Chrome, Firefox, Safari, or Edge',
+          'Make sure you\'re not in Incognito/Private mode'
+        ],
+        retryText: null,
+        canRetry: false
+      }
+    
+    case ERROR_TYPES.CAMERA_CRASHED:
+      return {
+        icon: '💥',
+        title: 'Camera Stopped',
+        description: 'The camera stream was interrupted. This can happen if another app started using the camera.',
+        instructions: [
+          'Close other apps using the camera',
+          'Check if your webcam is still connected',
+          'Click "Restart Camera" to try again'
+        ],
+        retryText: 'Restart Camera',
+        canRetry: true
+      }
+    
+    case ERROR_TYPES.DETECTION_FAILED:
+      return {
+        icon: '⚠️',
+        title: 'Detection Not Working',
+        description: 'The sign detection stopped responding. This is usually a temporary glitch.',
+        instructions: [
+          'Try restarting the camera',
+          'Make sure you\'re in a well-lit area',
+          'Keep your hands clearly visible'
+        ],
+        retryText: 'Restart Detection',
+        canRetry: true
+      }
+    
+    case ERROR_TYPES.NETWORK_ERROR:
+      return {
+        icon: '📡',
+        title: 'Network Error',
+        description: 'Couldn\'t connect to the detection service. Check your internet connection.',
+        instructions: [
+          'Check your internet connection',
+          'Try refreshing the page',
+          'If offline, this app requires internet to work'
+        ],
+        retryText: 'Retry Connection',
+        canRetry: true
+      }
+    
+    default:
+      return {
+        icon: '⚠️',
+        title: 'Something Went Wrong',
+        description: originalError?.message || 'An unexpected error occurred. Please try restarting the camera.',
+        instructions: [
+          'Try refreshing the page',
+          'Check your camera and internet connection',
+          'If problem persists, try restarting your browser'
+        ],
+        retryText: 'Try Again',
+        canRetry: true
+      }
+  }
+}
+
+const CameraPanel = forwardRef(function CameraPanel(props, ref) {
+  const {
+    onSignDetected,
+    onError,
+    onReady,
+    onMoodDetected,
+    targetSign = null,
+    showUI = true,
+    autoStart = true,
+    showSkeleton = true,
+    showConfidence = true,
+    showTargetOverlay = true
+  } = props
+
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
   const toast = useToast()
+  
+  // Use context for stars instead of local state and window events
+  const { stars, addStars: addStarsToContext } = useStars()
+  
   const [ready, setReady] = useState(false)
   const [label, setLabel] = useState('Show me a sign!')
   const [mood, setMood] = useState('Neutral')
+  const [error, setError] = useState(null)
+  const [errorType, setErrorType] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [lastEarned, setLastEarned] = useState('')
-  const [stars, setStars] = useState(() => {
-    try { return Number(localStorage.getItem('stars') || '0') } catch { return 0 }
-  })
   const [transcript, setTranscript] = useState('')
+  const [retryCount, setRetryCount] = useState(0)
+  const [lastFrameTime, setLastFrameTime] = useState(Date.now())
+  
+  // Visual feedback state
+  const [currentConfidence, setCurrentConfidence] = useState(0)
+  const [detectionStatus, setDetectionStatus] = useState(null) // 'correct', 'incorrect', null
+  const [lastDetectedSign, setLastDetectedSign] = useState(null)
+  const [showSuccessOverlay, setShowSuccessOverlay] = useState(false)
+
+  // Camera control refs
+  const cameraRef = useRef(null)
+  const handsRef = useRef(null)
+  const faceMeshRef = useRef(null)
+  const healthCheckIntervalRef = useRef(null)
+
+  // Expose camera controls to parent
+  useImperativeHandle(ref, () => ({
+    start: () => {
+      if (cameraRef.current) {
+        try { cameraRef.current.start() } catch (e) { handleError(e) }
+      }
+    },
+    stop: () => {
+      if (cameraRef.current) {
+        try { cameraRef.current.stop() } catch (e) { handleError(e) }
+      }
+    },
+    restart: async () => {
+      try {
+        if (cameraRef.current) {
+          cameraRef.current.stop()
+          await new Promise(r => setTimeout(r, 500))
+          cameraRef.current.start()
+        }
+      } catch (e) { handleError(e) }
+    },
+    getUprightAngle: () => {
+      return lastTipAngleRef.angle
+    }
+  }))
+
+  // Comprehensive error handler
+  const handleError = (err) => {
+    console.error('Camera error:', err)
+    
+    const type = detectErrorType(err)
+    const errorMessage = err?.message || 'Camera initialization failed'
+    
+    setError(errorMessage)
+    setErrorType(type)
+    setIsLoading(false)
+    setReady(false)
+    
+    // Clear health check interval on error
+    if (healthCheckIntervalRef.current) {
+      clearInterval(healthCheckIntervalRef.current)
+      healthCheckIntervalRef.current = null
+    }
+    
+    // Notify parent component
+    if (onError) {
+      onError(new Error(errorMessage), type)
+    }
+    
+    // Show user-friendly toast based on error type
+    const details = getErrorDetails(type, err)
+    toast.error(`${details.icon} ${details.title}`, { duration: 5000 })
+  }
+
+  // Retry with exponential backoff
+  const handleRetry = async () => {
+    const maxRetries = 3
+    const backoffMs = Math.min(1000 * Math.pow(2, retryCount), 8000)
+    
+    if (retryCount >= maxRetries) {
+      toast.error('❌ Max retries reached. Please refresh the page.', { duration: 5000 })
+      return
+    }
+    
+    setError(null)
+    setErrorType(null)
+    setIsLoading(true)
+    setRetryCount(prev => prev + 1)
+    
+    // Wait for backoff period
+    if (retryCount > 0) {
+      toast.info(`⏳ Retrying in ${backoffMs / 1000}s...`, { duration: backoffMs })
+      await new Promise(resolve => setTimeout(resolve, backoffMs))
+    }
+    
+    // Attempt restart
+    try {
+      await start()
+      setRetryCount(0) // Reset on success
+    } catch (err) {
+      handleError(err)
+    }
+  }
+
+  // Check browser compatibility before attempting camera access
+  const checkBrowserSupport = () => {
+    // Check getUserMedia support
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error('getUserMedia is not supported in this browser. Please use a modern browser like Chrome, Firefox, Safari, or Edge.')
+    }
+    
+    // Check if running in secure context (HTTPS or localhost)
+    if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      toast.warning('⚠️ Camera access requires HTTPS. Some features may not work.', { duration: 8000 })
+    }
+    
+    // Check for required browser APIs
+    if (typeof window.MediaStream === 'undefined') {
+      throw new Error('MediaStream API not supported')
+    }
+    
+    return true
+  }
+
+  // Health check - detect if camera/detection pipeline froze
+  const startHealthCheck = () => {
+    if (healthCheckIntervalRef.current) {
+      clearInterval(healthCheckIntervalRef.current)
+    }
+    
+    healthCheckIntervalRef.current = setInterval(() => {
+      const now = Date.now()
+      const timeSinceLastFrame = now - lastFrameTime
+      
+      // If no frames for 10 seconds, something is wrong
+      if (ready && timeSinceLastFrame > 10000) {
+        console.error('Detection pipeline appears frozen')
+        handleError(new Error('Detection pipeline stopped responding. Camera may have frozen.'))
+        
+        // Attempt auto-recovery
+        setTimeout(() => {
+          toast.info('🔄 Attempting automatic recovery...', { duration: 3000 })
+          handleRetry()
+        }, 2000)
+      }
+    }, 5000) // Check every 5 seconds
+  }
 
   // Speech debounce
   const lastSpokenRef = useRef({ text: '', t: 0 })
@@ -27,16 +361,15 @@ export default function CameraPanel() {
   }
 
   function addStar(signLabel) {
-    try {   
-      const next = stars + 1
-      setStars(next)
-      localStorage.setItem('stars', String(next))
+    try {
+      addStarsToContext(1) // Context handles localStorage and sync automatically
       setLastEarned(signLabel)
       // Show success toast
       toast.success(`⭐ Great job! You earned a star for ${signLabel}!`, { duration: 4000 })
-      // notify others
-      try { window.dispatchEvent(new CustomEvent('starsUpdated', { detail: next })) } catch {}
-    } catch {}
+      // No more window events! Context handles synchronization 🎉
+    } catch (error) {
+      console.error('Failed to add star:', error)
+    }
   }
 
   function appendTranscript(word) {
@@ -194,6 +527,22 @@ export default function CameraPanel() {
   const stable = Object.keys(counts).filter(k => counts[k] >= (stableThresholdMap[k] || STABLE_COUNT))
       if (stable.length) {
         setLabel(`Detected: ${stable.map(s => s.replace('_',' ')).join(', ')}`)
+        setLastDetectedSign(stable[0])
+        
+        // Check if detected sign matches target
+        if (targetSign) {
+          const isCorrect = stable.includes(targetSign)
+          setDetectionStatus(isCorrect ? 'correct' : 'incorrect')
+          
+          // Show success overlay for correct detections
+          if (isCorrect) {
+            setShowSuccessOverlay(true)
+            setTimeout(() => setShowSuccessOverlay(false), 2000)
+          }
+        } else {
+          setDetectionStatus(null)
+        }
+        
         // Show info toast for detected signs
         const signNames = stable.map(s => s.replace('_',' ')).join(', ')
         toast.info(`👋 Sign detected: ${signNames}`, { duration: 2500 })
@@ -212,7 +561,10 @@ export default function CameraPanel() {
             if (now - lastWaveAt > WAVE_COOLDOWN_MS) {
               lastWaveAt = now
               sendChildEvent({ type: 'sign', payload: { value: 'WAVE' } })
-              try { window.dispatchEvent(new CustomEvent('signDetected', { detail: { value: 'WAVE' } })) } catch {}
+              // Call parent callback (no more window events!)
+              if (onSignDetected) {
+                onSignDetected('WAVE', { isTarget: targetSign === 'WAVE', confidence: 1.0 })
+              }
               wordsToSpeak.push('hello')
               appendTranscript('hello')
               try { window.confetti?.({ particleCount: 30, spread: 50, origin: { y: 0.7 } }) } catch {}
@@ -223,7 +575,10 @@ export default function CameraPanel() {
           if (now - lastAt > SIGN_COOLDOWN_MS) {
             signCooldown[s] = now
             sendChildEvent({ type: 'sign', payload: { value: s } })
-            try { window.dispatchEvent(new CustomEvent('signDetected', { detail: { value: s } })) } catch {}
+            // Call parent callback (no more window events!)
+            if (onSignDetected) {
+              onSignDetected(s, { isTarget: targetSign === s, confidence: 1.0 })
+            }
             const word = wordsMap[s] || s.toLowerCase()
             wordsToSpeak.push(word)
             appendTranscript(word)
@@ -235,6 +590,8 @@ export default function CameraPanel() {
         if (wordsToSpeak.length) speak(wordsToSpeak.join(' '))
       } else {
         setLabel('Show me a sign!')
+        setDetectionStatus(null)
+        setLastDetectedSign(null)
       }
     }
 
@@ -401,6 +758,10 @@ export default function CameraPanel() {
       if (maj !== lastMood && (now - lastMoodSentAt) > 5000) {
         lastMood = maj; lastMoodSentAt = now
         sendChildEvent({ type: 'mood', payload: { value: maj } })
+        // Call parent callback
+        if (onMoodDetected) {
+          onMoodDetected(maj)
+        }
       }
     }
 
@@ -413,14 +774,43 @@ export default function CameraPanel() {
       ctx.save()
       ctx.clearRect(0,0,canvas.width,canvas.height)
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+      
         let labelsInFrame = []
         const handsLms = results.multiHandLandmarks || []
+        
+        // Draw target sign overlay (semi-transparent watermark)
+        if (showTargetOverlay && targetSign) {
+          ctx.save()
+          ctx.font = 'bold 48px system-ui'
+          ctx.fillStyle = 'rgba(99, 102, 241, 0.15)'
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'top'
+          const friendlyName = targetSign.replace('_', ' ')
+          ctx.fillText(`🎯 ${friendlyName}`, canvas.width / 2, 30)
+          ctx.restore()
+        }
+        
         if (handsLms.length > 0) {
           for (const landmarks of handsLms) {
-          try {
-            window.drawConnectors?.(ctx, landmarks, window.HAND_CONNECTIONS, { color: '#00FF00', lineWidth: 5 })
-            window.drawLandmarks?.(ctx, landmarks, { color: '#FF0000', lineWidth: 2 })
-          } catch {}
+          // Draw hand skeleton with enhanced styling
+          if (showSkeleton) {
+            try {
+              // Draw connections (skeleton lines) with gradient effect
+              window.drawConnectors?.(ctx, landmarks, window.HAND_CONNECTIONS, { 
+                color: '#00FF88', 
+                lineWidth: 4 
+              })
+              // Draw landmarks (joint points) 
+              window.drawLandmarks?.(ctx, landmarks, { 
+                color: '#FF3B5C', 
+                lineWidth: 2,
+                radius: 4
+              })
+            } catch (e) {
+              console.warn('Hand drawing failed:', e)
+            }
+          }
+          
           const raw = recognizeSign(landmarks)
             labelsInFrame.push(raw)
             // Track index curl distance for beckon pattern
@@ -430,6 +820,12 @@ export default function CameraPanel() {
             const indexDist = getDistance(indexTip, palmCenter) / (handSize || 1)
             trackIndexCurl(indexDist)
         }
+        
+        // Calculate confidence score based on stability
+        const confidence = frameHistory.length > 0 ? 
+          Math.min(100, Math.round((frameHistory.filter(s => s.size > 0).length / N_FRAMES) * 100)) : 0
+        setCurrentConfidence(confidence)
+        
           // Two-hand combined gestures
           if (handsLms.length >= 2) {
             const lm1 = handsLms[0], lm2 = handsLms[1]
@@ -469,100 +865,398 @@ export default function CameraPanel() {
         if (hasComeHerePattern(0.20, 0.36)) {
           labelsInFrame.push('COME_HERE')
         }
+        
+        // Draw confidence overlay
+        if (showConfidence && labelsInFrame.length > 0 && labelsInFrame[0] !== 'NONE') {
+          ctx.save()
+          const detectedSign = labelsInFrame[0].replace('_', ' ')
+          const confidencePercent = Math.round(confidence)
+          
+          // Background box
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
+          ctx.fillRect(10, canvas.height - 70, 220, 60)
+          
+          // Sign label
+          ctx.font = 'bold 24px system-ui'
+          ctx.fillStyle = confidence > 70 ? '#10B981' : confidence > 40 ? '#F59E0B' : '#EF4444'
+          ctx.textAlign = 'left'
+          ctx.fillText(detectedSign, 20, canvas.height - 42)
+          
+          // Confidence percentage
+          ctx.font = '18px system-ui'
+          ctx.fillStyle = '#FFFFFF'
+          ctx.fillText(`${confidencePercent}% confidence`, 20, canvas.height - 18)
+          
+          ctx.restore()
+        }
+      } else {
+        // No hands detected - clear confidence
+        setCurrentConfidence(0)
       }
+      
+      // Draw success overlay when correct sign is detected
+      if (showSuccessOverlay) {
+        ctx.save()
+        
+        // Semi-transparent success overlay
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.25)'
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        
+        // Success message
+        ctx.font = 'bold 72px system-ui'
+        ctx.fillStyle = '#FFFFFF'
+        ctx.strokeStyle = '#10B981'
+        ctx.lineWidth = 4
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        
+        const message = '✅ PERFECT!'
+        ctx.strokeText(message, canvas.width / 2, canvas.height / 2)
+        ctx.fillText(message, canvas.width / 2, canvas.height / 2)
+        
+        // Draw animated stars around the text
+        const time = Date.now() / 100
+        for (let i = 0; i < 8; i++) {
+          const angle = (i / 8) * Math.PI * 2 + time * 0.02
+          const radius = 120 + Math.sin(time * 0.1 + i) * 20
+          const x = canvas.width / 2 + Math.cos(angle) * radius
+          const y = canvas.height / 2 + Math.sin(angle) * radius
+          
+          ctx.font = '32px system-ui'
+          ctx.fillText('⭐', x, y)
+        }
+        
+        ctx.restore()
+      }
+      
       processStable(labelsInFrame)
       ctx.restore()
     }
 
   async function start() {
-      const { Hands } = window
-      const { FaceMesh } = window
-      const { Camera } = window
-      if (!Hands || !Camera) return
-  hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` })
-  hands.setOptions({ maxNumHands: 2, modelComplexity: 1, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 })
-      hands.onResults(onHandResults)
-      if (FaceMesh) {
+      try {
+        // Step 1: Check browser compatibility
+        checkBrowserSupport()
+        
+        // Step 2: Check MediaPipe libraries loaded
+        const { Hands } = window
+        const { FaceMesh } = window
+        const { Camera } = window
+        
+        if (!Hands || !Camera) {
+          throw new Error('MediaPipe libraries not loaded. This may be a network issue or CDN problem.')
+        }
+
+        setIsLoading(true)
+        setError(null)
+        setErrorType(null)
+        
+        // Step 3: Initialize MediaPipe Hands
         try {
-          faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` })
-          faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 })
-          faceMesh.onResults(onFaceResults)
-        } catch {}
-      }
-      camera = new Camera(videoRef.current, {
-        onFrame: async () => {
-          await hands.send({ image: videoRef.current })
-          if (faceMesh) {
-            try { await faceMesh.send({ image: videoRef.current }) } catch {}
+          hands = new Hands({ 
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` 
+          })
+          hands.setOptions({ 
+            maxNumHands: 2, 
+            modelComplexity: 1, 
+            minDetectionConfidence: 0.5, 
+            minTrackingConfidence: 0.5 
+          })
+          hands.onResults(onHandResults)
+          handsRef.current = hands
+        } catch (e) {
+          console.error('Hands initialization failed:', e)
+          throw new Error('Failed to initialize hand detection engine')
+        }
+        
+        // Step 4: Initialize MediaPipe FaceMesh (optional)
+        if (FaceMesh) {
+          try {
+            faceMesh = new FaceMesh({ 
+              locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` 
+            })
+            faceMesh.setOptions({ 
+              maxNumFaces: 1, 
+              refineLandmarks: true, 
+              minDetectionConfidence: 0.5, 
+              minTrackingConfidence: 0.5 
+            })
+            faceMesh.onResults(onFaceResults)
+            faceMeshRef.current = faceMesh
+          } catch (e) {
+            console.warn('FaceMesh initialization failed (optional):', e)
+            // FaceMesh failure is not critical
           }
-        },
-        width: 640,
-        height: 480
-      })
-      camera.start()
-      cameraRunning = true
-      setReady(true)
+        }
+        
+        // Step 5: Initialize Camera with error handling
+        try {
+          camera = new Camera(videoRef.current, {
+            onFrame: async () => {
+              // Update last frame time for health check
+              setLastFrameTime(Date.now())
+              
+              try {
+                await hands.send({ image: videoRef.current })
+                if (faceMesh) {
+                  try { 
+                    await faceMesh.send({ image: videoRef.current }) 
+                  } catch (e) {
+                    // Face mesh errors are not critical
+                    console.warn('FaceMesh frame processing error:', e)
+                  }
+                }
+              } catch (e) {
+                console.error('Frame processing error:', e)
+                // Don't throw here, just log - single frame failures are acceptable
+              }
+            },
+            width: 640,
+            height: 480
+          })
+          
+          await camera.start()
+          cameraRef.current = camera
+        } catch (e) {
+          console.error('Camera start failed:', e)
+          // Detect specific camera errors
+          if (e.name === 'NotAllowedError' || e.message.includes('permission')) {
+            throw new Error('Camera permission denied. Please allow camera access.')
+          } else if (e.name === 'NotFoundError' || e.message.includes('not found')) {
+            throw new Error('No camera found. Please connect a webcam.')
+          } else if (e.name === 'NotReadableError' || e.message.includes('not readable')) {
+            throw new Error('Camera is already in use by another application.')
+          } else {
+            throw new Error(`Camera failed to start: ${e.message}`)
+          }
+        }
+        
+        // Success!
+        cameraRunning = true
+        setReady(true)
+        setIsLoading(false)
+        setError(null)
+        setErrorType(null)
+        
+        // Start health monitoring
+        startHealthCheck()
+        
+        // Notify parent component
+        if (onReady) {
+          onReady()
+        }
+        
+      } catch (err) {
+        handleError(err)
+      }
     }
 
-  // Wait for scripts to be present
+  // Wait for scripts to be present with timeout and better error handling
     let tries = 0
+    const maxTries = 60 // 15 seconds
     const iv = setInterval(() => {
       if (window.Hands && window.Camera) {
         clearInterval(iv)
-        start()
-      } else if (++tries > 60) {
+        if (autoStart) {
+          start()
+        } else {
+          setIsLoading(false)
+        }
+      } else if (++tries > maxTries) {
         clearInterval(iv)
+        const error = new Error('MediaPipe libraries failed to load after 15 seconds. Check your internet connection.')
+        handleError(error)
       }
     }, 250)
 
     function cleanup() {
-      try { camera?.stop?.() } catch {}
+      // Clear health check interval
+      if (healthCheckIntervalRef.current) {
+        clearInterval(healthCheckIntervalRef.current)
+        healthCheckIntervalRef.current = null
+      }
+      
+      // Stop camera
+      try { 
+        camera?.stop?.() 
+      } catch (e) {
+        console.warn('Camera stop error:', e)
+      }
+      
+      // Stop media tracks
       try {
         const stream = videoRef.current?.srcObject
-        if (stream && typeof stream.getTracks === 'function') stream.getTracks().forEach(t => { try { t.stop() } catch {} })
-        if (videoRef.current) videoRef.current.srcObject = null
-      } catch {}
+        if (stream && typeof stream.getTracks === 'function') {
+          stream.getTracks().forEach(track => { 
+            try { 
+              track.stop() 
+            } catch (e) {
+              console.warn('Track stop error:', e)
+            }
+          })
+        }
+        if (videoRef.current) {
+          videoRef.current.srcObject = null
+        }
+      } catch (e) {
+        console.warn('Stream cleanup error:', e)
+      }
+      
+      // Clear MediaPipe instances
       cameraRunning = false
       hands = null
       faceMesh = null
     }
 
-    // Provide upright angle for calibration
-    function onRequestUpright() {
-      try { window.dispatchEvent(new CustomEvent('replyUprightAngle', { detail: { tipAngle: lastTipAngleRef.angle } })) } catch {}
-    }
+    // Calibration is now handled via imperative ref methods (no more window events!)
 
-    // Pause when tab hidden
+    // Pause when tab hidden - with error handling
     function onVisibility() {
       if (document.hidden) {
-        try { camera?.stop?.() } catch {}
+        try { 
+          camera?.stop?.() 
+        } catch (e) {
+          console.warn('Failed to stop camera on visibility change:', e)
+        }
       } else {
-        try { camera?.start?.() } catch {}
+        try { 
+          camera?.start?.() 
+        } catch (e) {
+          console.error('Failed to restart camera on visibility change:', e)
+          handleError(new Error('Camera failed to restart when tab became visible'))
+        }
       }
     }
-    window.addEventListener('requestUprightAngle', onRequestUpright)
     document.addEventListener('visibilitychange', onVisibility)
 
-    return () => { document.removeEventListener('visibilitychange', onVisibility); window.removeEventListener('requestUprightAngle', onRequestUpright); cleanup() }
+    return () => { 
+      document.removeEventListener('visibilitychange', onVisibility)
+      cleanup() 
+    }
   }, [])
 
   return (
-    <div className="camera-panel">
-      <div className="video-wrap">
-        <video ref={videoRef} autoPlay playsInline />
-        <canvas ref={canvasRef} width={640} height={480} />
-      </div>
-      <div className="row" style={{ marginTop: 8 }}>
-        <strong>{label}</strong>
-        <span style={{ marginLeft: 'auto' }}>Mood: {mood}</span>
-      </div>
-      {!ready && (
-        <div style={{ marginTop: 10 }}>
-          <Skeleton variant="text" width="80%" />
-          <p className="muted" style={{ marginTop: 8 }}>If prompted, allow camera access.</p>
+    <div className={`camera-panel ${detectionStatus === 'correct' ? 'detection-correct' : detectionStatus === 'incorrect' ? 'detection-incorrect' : ''}`}>
+      {/* Comprehensive Error State with Instructions */}
+      {error && errorType && (
+        <ErrorState
+          icon={getErrorDetails(errorType, new Error(error)).icon}
+          title={getErrorDetails(errorType, new Error(error)).title}
+          description={(
+            <div>
+              <p style={{ marginBottom: '1rem' }}>
+                {getErrorDetails(errorType, new Error(error)).description}
+              </p>
+              {getErrorDetails(errorType, new Error(error)).instructions && (
+                <div style={{ 
+                  textAlign: 'left', 
+                  background: 'rgba(99, 102, 241, 0.05)', 
+                  padding: '1rem', 
+                  borderRadius: '8px',
+                  marginTop: '1rem'
+                }}>
+                  <strong style={{ display: 'block', marginBottom: '0.5rem' }}>
+                    💡 How to fix:
+                  </strong>
+                  <ol style={{ margin: 0, paddingLeft: '1.5rem' }}>
+                    {getErrorDetails(errorType, new Error(error)).instructions.map((instruction, i) => (
+                      <li key={i} style={{ marginBottom: '0.25rem' }}>{instruction}</li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+              {retryCount > 0 && (
+                <p style={{ 
+                  marginTop: '1rem', 
+                  fontSize: '0.875rem', 
+                  color: '#6B7280' 
+                }}>
+                  Retry attempt {retryCount}/3
+                </p>
+              )}
+            </div>
+          )}
+          retryText={getErrorDetails(errorType, new Error(error)).retryText}
+          onRetry={getErrorDetails(errorType, new Error(error)).canRetry ? handleRetry : null}
+          variant="default"
+          size="md"
+          error={process.env.NODE_ENV === 'development' ? new Error(error) : null}
+        />
+      )}
+      
+      {/* Loading State with Skeleton */}
+      {isLoading && !error && (
+        <div className="camera-loading" style={{
+          padding: '2rem',
+          textAlign: 'center',
+          background: 'rgba(99, 102, 241, 0.05)',
+          borderRadius: '12px',
+          marginBottom: '1rem'
+        }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem', animation: 'pulse 2s infinite' }}>📹</div>
+          <Skeleton variant="text" width="60%" style={{ margin: '0 auto 0.5rem' }} />
+          <Skeleton variant="text" width="40%" style={{ margin: '0 auto 0.75rem' }} />
+          <Skeleton variant="text" width="50%" style={{ margin: '0 auto' }} />
+          <p className="muted" style={{ 
+            marginTop: '1.5rem', 
+            fontSize: '0.875rem',
+            lineHeight: '1.5'
+          }}>
+            <strong>Initializing camera and MediaPipe models...</strong>
+            <br />
+            {retryCount > 0 ? (
+              <>Retry attempt {retryCount}/3</>
+            ) : (
+              <>If prompted, please allow camera access.</>
+            )}
+          </p>
         </div>
       )}
-      {transcript && (
+
+      {/* Video Feed (hidden during loading/error) */}
+      <div 
+        className="video-wrap" 
+        style={{ display: isLoading || error ? 'none' : 'block' }}
+        role="region"
+        aria-label="Live camera feed for sign language detection"
+      >
+        <video 
+          ref={videoRef} 
+          autoPlay 
+          playsInline
+          aria-label="Live camera feed showing your hands for sign language practice"
+          aria-live="off"
+        />
+        <canvas 
+          ref={canvasRef} 
+          width={640} 
+          height={480}
+          aria-label="Visual feedback overlay showing detected hand landmarks and confidence scores"
+          role="img"
+        />
+      </div>
+      
+      {/* Screen Reader Announcements - Detection Status */}
+      <div 
+        role="status" 
+        aria-live="polite" 
+        aria-atomic="true"
+        className="sr-only"
+        style={{ position: 'absolute', left: '-10000px', width: '1px', height: '1px', overflow: 'hidden' }}
+      >
+        {label && label !== 'Show me a sign!' && `Detected sign: ${label}`}
+      </div>
+      
+      {/* Camera Controls (only when ready) */}
+      {showUI && ready && !error && (
+        <>
+          <div className="row" style={{ marginTop: 8 }} role="status" aria-live="polite">
+            <strong>{label}</strong>
+            <span style={{ marginLeft: 'auto' }}>Mood: {mood}</span>
+          </div>
+        </>
+      )}
+      {showUI && transcript && (
         <div className="card" style={{ marginTop: 10 }}>
           <h3>Live Transcript</h3>
           <p style={{ margin: 0 }}>{transcript}</p>
@@ -571,7 +1265,7 @@ export default function CameraPanel() {
           </div>
         </div>
       )}
-      {lastEarned && (
+      {showUI && lastEarned && (
         <div className="card reward" style={{ marginTop: 10 }}>
           <strong>Great job!</strong>
           <p className="muted">You earned a star for {lastEarned}.</p>
@@ -583,4 +1277,6 @@ export default function CameraPanel() {
       )}
     </div>
   )
-}
+})
+
+export default CameraPanel
