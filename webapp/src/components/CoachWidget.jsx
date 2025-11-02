@@ -31,7 +31,7 @@ export default function CoachWidget({ mode = 'home', demo = false }) {
         ? 'You are Otter Coach. Speak to a 6-year-old with short, friendly sentences and lots of encouragement.'
         : 'You are a supportive coach for a busy parent. Provide clear, concise guidance with 3 actionable bullet points.'
       const prompt = `${persona}\n\nConversation so far (short):\n${next.slice(-4).map(m => (m.role==='user'?`Child/Parent: ${m.content}`:`Coach: ${m.content}`)).join('\n')}\n\nCoach reply:`
-      const r = await fetch('/ask-gpt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) })
+      const r = await fetch('/api/ask-gpt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) })
   const d = await r.json()
   const prefix = d?.demo ? '[Demo] ' : ''
   const text = (d?.response ? prefix + d.response : 'AI is unavailable right now. Please try again later.')

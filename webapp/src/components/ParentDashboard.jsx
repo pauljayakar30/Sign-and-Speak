@@ -20,20 +20,35 @@ export default function ParentDashboard() {
   const [loading, setLoading] = useState(false)
 
   async function generateCode() {
+    // TODO: Implement pairing serverless function
     setStatus('generating')
-    const r = await fetch('/pair/generate', { method: 'POST' })
-    const d = await r.json()
-    setCode(d.code)
-    setStatus('waiting')
-    toast.success('Pairing code generated!')
+    toast.info('Pairing feature coming soon!')
+    // Simulate code generation for demo
+    setTimeout(() => {
+      setCode(String(Math.floor(100000 + Math.random() * 900000)))
+      setStatus('waiting')
+      toast.success('Demo pairing code generated (not functional)')
+    }, 500)
+    return
+    
+    // Original implementation (commented out until serverless function is created):
+    // const r = await fetch('/api/pair/generate', { method: 'POST' })
+    // const d = await r.json()
+    // setCode(d.code)
+    // setStatus('waiting')
+    // toast.success('Pairing code generated!')
   }
 
   useEffect(() => {
+    // TODO: Re-enable when pairing serverless functions are implemented
+    // Pairing polling disabled - would need /api/pair/status and /api/pair/feed endpoints
+    
+    /* Original implementation:
     let t
     async function poll() {
       if (!code) return
       try {
-        const r = await fetch(`/pair/status/${code}`)
+        const r = await fetch(`/api/pair/status/${code}`)
         if (r.ok) {
           const d = await r.json()
           const newStatus = d.claimed ? 'connected' : 'waiting'
@@ -42,7 +57,7 @@ export default function ParentDashboard() {
             if (newStatus === 'connected') toast.success('Child connected!')
           }
         }
-        const rf = await fetch(`/pair/feed/${code}`)
+        const rf = await fetch(`/api/pair/feed/${code}`)
         if (rf.ok) {
           const df = await rf.json()
           setFeed(df.feed || [])
@@ -52,6 +67,7 @@ export default function ParentDashboard() {
     }
     poll()
     return () => clearTimeout(t)
+    */
   }, [code, status, toast])
 
   const stats = useMemo(() => {
@@ -82,7 +98,7 @@ export default function ParentDashboard() {
     setLoading(true)
     setAiText('')
     try {
-      const r = await fetch('/ask-gpt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) })
+      const r = await fetch('/api/ask-gpt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) })
       const d = await r.json()
       setAiText(d && d.response ? `${d?.demo ? '[Demo] ' : ''}${d.response}` : 'AI is unavailable right now.')
     } catch (error) {
@@ -98,19 +114,13 @@ export default function ParentDashboard() {
     setAiText('')
     toast.info(`Getting ${label}...`)
     try {
-      const r = await fetch(path, { method: 'POST' })
-      if (r.ok) {
-        const d = await r.json()
-        setAiText(`${d?.demo ? '[Demo] ' : ''}${d.response || 'No response'}`)
-      } else throw new Error('endpoint failed')
+      // Use fallback directly since specific endpoints don't exist yet
+      const r = await fetch('/api/ask-gpt', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ prompt: fallbackPrompt }) })
+      const d = await r.json()
+      setAiText(d && d.response ? `${d?.demo ? '[Demo] ' : ''}${d.response}` : 'AI is unavailable.')
     } catch {
-      try {
-        const r = await fetch('/ask-gpt', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ prompt: fallbackPrompt }) })
-        const d = await r.json()
-        setAiText(d && d.response ? `${d?.demo ? '[Demo] ' : ''}${d.response}` : 'AI is unavailable.')
-      } catch {
-        setAiText('AI is unavailable.')
-      }
+      setAiText('AI is unavailable.')
+      toast.error('Failed to get AI response')
     } finally {
       setLoading(false)
     }

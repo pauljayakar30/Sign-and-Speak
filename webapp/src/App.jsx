@@ -19,7 +19,6 @@ import { Home, GraduationCap, Users, Target, User } from 'lucide-react'
 import ChildHome from './components/ChildHome.jsx'
 import ParentDashboard from './components/ParentDashboard.jsx'
 import NewHome from './components/NewHome.jsx'
-import CoachWidget from './components/CoachWidget.jsx'
 import TrainingMode from './components/TrainingMode.jsx'
 import AdultLearning from './components/AdultLearning.jsx'
 import { ToastProvider } from './components/Toast.jsx'
@@ -41,9 +40,6 @@ function TabButton({ id, current, onClick, children }) {
 export default function App() {
   // Navigation state
   const [tab, setTab] = useState('home')
-  
-  // Server environment status (API key presence, demo mode)
-  const [envOk, setEnvOk] = useState(null)
   
   // Current user's selected avatar character (from context)
   const { avatar } = useAvatar()
@@ -67,11 +63,6 @@ export default function App() {
   
   // Respect user's motion preferences for accessibility
   const prefersReduced = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
-  // Check server environment status on mount
-  useEffect(() => {
-    fetch('/env-ok').then(r => r.json()).then(setEnvOk).catch(() => setEnvOk({ openaiKeyPresent: false, demoMode: true }))
-  }, [])
 
   // Avatar sync is now handled by AppContext - no more polling! 🎉
 
@@ -207,9 +198,6 @@ export default function App() {
             <small>Built for learning and communication. Camera data stays in your browser.</small>
           </footer>
         </main>
-
-        {/* AI Coach Floating Widget */}
-        <CoachWidget mode={tab === 'child' ? 'child' : (tab === 'parent' ? 'parent' : 'home')} demo={Boolean(envOk?.demoMode)} />
       </div>
     </ToastProvider>
   )
