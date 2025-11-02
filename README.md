@@ -1,118 +1,122 @@
-# 🦦 Sign & Speak# Sign & Speak
+# 🦦 Sign & Speak
 
+> **Turn Gestures Into Words** – Real-time, browser-based sign recognition for kids, plus a friendly AI helper for parents.
 
-
-> **Turn Gestures Into Words** – An interactive platform that recognizes hand signs and facial expressions in real-time, helping children communicate and learn with joy.Real-time, browser-based sign recognition for kids, plus a friendly AI helper for parents.
-
-
-
-![Sign & Speak](https://img.shields.io/badge/Status-Production%20Ready-success)## What’s inside
-
-![License](https://img.shields.io/badge/License-MIT-blue)- Child’s Voice: Webcam + MediaPipe Hands to detect simple signs and speak them aloud (Text-to-Speech).
-
-![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)- Parent’s Learner: Ask concise parenting/how-to-teach questions powered by the OpenAI API.
-
-![Node](https://img.shields.io/badge/Node.js-Express-339933?logo=node.js)- Single Node.js server serves the frontend and proxies the OpenAI request securely.
-
-
-
----## Prerequisites
-
-- Node.js 18+ (or 20+ recommended)
-
-## ✨ Features- An OpenAI API key
-
-
-
-### 🎯 **Real-Time Sign Recognition**## Setup (local)
-
-- Detects **15+ hand signs** instantly using your device camera1. Install dependencies
-
-- Recognizes **7 facial expressions** for mood tracking```powershell
-
-- Powered by **MediaPipe** computer vision – all processing stays on your devicenpm install
-
-```
-
-### 👶 **Child-Friendly Learning**2. Create a `.env` file and add your OpenAI key
-
-- **Gamified rewards** system with stars and unlockable stickers```powershell
-
-- **Character selection** (Otter, Panda, Fox, Dino)Copy-Item .env.example .env
-
-- **Training mode** with guided practice and hints# Then edit .env and set the value
-
-- **Daily goals** with visual progress rings```
-
-- Kid-friendly fonts (Fredoka, Baloo 2) for readability3. Start the server
-
-```powershell
-
-### 📊 **Parent Dashboard**npm start
-
-- **Real-time activity feed** showing signs recognized and mood changes```
-
-- **Analytics & KPIs**: total stars, unique signs, practice time, current mood4. Open http://localhost:3000 and allow camera access.
-
-- **Trend visualizations** with sparkline charts
-
-- **Secure pairing** via unique 6-digit codes (no accounts needed)## Try it
-
-- Show an open palm to see and hear “STOP”.
-
-### 🤖 **AI-Powered Coach**- Make a closed fist to see and hear “MILK”.
-
-- Personalized tips and encouragement powered by **OpenAI GPT-4o-mini**- In Parent’s Corner, ask something like: “How can I teach the sign for ‘play’ to a 4-year-old?”
-
-- Specialized endpoints for:
-
-  - Daily practice ideas## Environment variables
-
-  - Weekly progress summariesCreate a `.env` file based on `.env.example`:
-
-  - Next steps recommendations```
-
-  - Mood-based responsesOPENAI_API_KEY=sk-...
-
-  - Custom coaching questionsPORT=3000
-
-- **Demo mode** with simulated responses when API key is unavailable```
-
-
-
-### 🔒 **Privacy First**## Replit
-
-- **All camera processing happens locally** in your browserThis repo includes a Replit config that runs the Node server and serves the site:
-
-- Video data **never leaves your device**- Add your `OPENAI_API_KEY` as a Secret in Replit
-
-- No account registration required- Click Run; Replit will expose the server URL
-
-- Minimal data collection (only session-based pairing)
-
-If you forked an older version that served static files only, make sure the run workflow is set to `npm start` and not a static server.
+![Sign & Speak](https://img.shields.io/badge/Status-Production%20Ready-success)
+![License](https://img.shields.io/badge/License-MIT-blue)
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)
+![Node](https://img.shields.io/badge/Node.js-Express-339933?logo=node.js)
 
 ---
 
-## Troubleshooting
+## ✨ Features
 
-## 🛠️ Tech Stack- Camera doesn’t start: Ensure you’re on HTTPS (Replit) or `http://localhost` and have allowed camera permissions.
+### 🎯 **Real-Time Sign Recognition**
+- Detects **15+ hand signs** instantly using your device camera
+- Recognizes **7 facial expressions** for mood tracking
+- Powered by **MediaPipe** computer vision – all processing stays on your device
 
-- No audio: Some browsers require a user gesture before TTS; interacting with the page (click/typing) helps.
+### 👶 **Child-Friendly Learning**
+- **Gamified rewards** system with stars and unlockable stickers
+- **Character selection** (Otter, Panda, Fox, Dino)
+- **Training mode** with guided practice and hints
+- **Daily goals** with visual progress rings
+- Kid-friendly fonts (Fredoka, Baloo 2) for readability
 
-### **Frontend**- “Failed to get response from AI”: Verify `OPENAI_API_KEY` is set and your server logs show no errors.
+### 📊 **Parent Dashboard**
+- **Real-time activity feed** showing signs recognized and mood changes
+- **Analytics & KPIs**: total stars, unique signs, practice time, current mood
+- **Trend visualizations** with sparkline charts
+- **Secure pairing** via unique 6-digit codes (no accounts needed)
 
+### 🤖 **AI-Powered Coach**
+- Personalized tips and encouragement powered by **OpenAI GPT-4o-mini**
+- Specialized endpoints for:
+  - Daily practice ideas
+  - Weekly progress summaries
+  - Next steps recommendations
+  - Mood-based responses
+  - Custom coaching questions
+- **Demo mode** with simulated responses when API key is unavailable
+
+### 🔒 **Privacy First**
+- **All camera processing happens locally** in your browser
+- Video data **never leaves your device**
+- No account registration required
+- Minimal data collection (only session-based pairing)
+
+---
+
+## 🚀 Quick Start
+
+### **Prerequisites**
+- Node.js 18+ (or 20+ recommended)
+- An OpenAI API key (optional – works in demo mode without it)
+
+### **Installation**
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/pauljayakar30/Sign-and-Speak.git
+   cd Sign-and-Speak
+   ```
+
+2. **Install dependencies**
+   ```bash
+   # Root (backend)
+   npm install
+
+   # Frontend (React app)
+   cd webapp
+   npm install
+   cd ..
+   ```
+
+3. **Set up environment variables**
+   ```bash
+   # Copy example file
+   Copy-Item .env.example .env
+   
+   # Edit .env and add your OpenAI API key (or leave blank for demo mode)
+   ```
+
+4. **Start development servers**
+
+   **Option A: Start both servers (recommended)**
+   ```bash
+   # Terminal 1 - Backend (port 3000)
+   npm start
+
+   # Terminal 2 - Frontend (port 5173)
+   npm run dev:webapp
+   ```
+
+   **Option B: Use VS Code tasks**
+   - Press `Ctrl+Shift+P` (Windows) or `Cmd+Shift+P` (Mac)
+   - Select "Tasks: Run Task"
+   - Choose "Start server" or "Start React dev server"
+
+5. **Open in browser**
+   ```
+   http://localhost:5173
+   ```
+
+6. **Try it out**
+   - Allow camera access when prompted
+   - Show an open palm to see and hear "STOP"
+   - Make a closed fist to see and hear "MILK"
+   - In Parent's Corner, ask: "How can I teach the sign for 'play' to a 4-year-old?"
+
+---
+
+## 🛠️ Tech Stack
+
+### **Frontend**
 - **React 18** – Component-based UI
-
-- **Vite 5.4** – Lightning-fast build tool and dev server## Tech notes
-
-- **Framer Motion** – Smooth page transitions and animations- Frontend: MediaPipe Hands (via CDN), Web Speech Synthesis API
-
-- **MediaPipe (Google)** – Hand gesture and facial expression detection- Backend: Express, CORS, OpenAI SDK
-
-- **CSS Custom Properties** – Design system with fluid typography and 8pt grid- Endpoint: `POST /ask-gpt` with JSON `{ prompt: string }`
-
-
+- **Vite 5.4** – Lightning-fast build tool and dev server
+- **Framer Motion** – Smooth page transitions and animations
+- **MediaPipe (Google)** – Hand gesture and facial expression detection
+- **CSS Custom Properties** – Design system with fluid typography and 8pt grid
 
 ### **Backend**
 - **Node.js + Express** – REST API server
@@ -130,111 +134,39 @@ If you forked an older version that served static files only, make sure the run 
 
 ---
 
-## 🚀 Quick Start
-
-### **Prerequisites**
-- Node.js 16+ and npm
-- OpenAI API key (optional, works in demo mode without it)
-
-### **Installation**
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/sign-and-speak.git
-   cd sign-and-speak
-   ```
-
-2. **Install dependencies**
-   ```bash
-   # Root (backend)
-   npm install
-
-   # Frontend (React app)
-   cd webapp
-   npm install
-   cd ..
-   ```
-
-3. **Set up environment variables**
-   
-   Create a `.env` file in the project root:
-   ```env
-   OPENAI_API_KEY=your_api_key_here
-   # Optional: Leave blank to use demo mode with simulated responses
-   ```
-
-4. **Start development servers**
-
-   **Terminal 1 (Backend)**:
-   ```bash
-   npm start
-   # Server runs on http://localhost:3000
-   ```
-
-   **Terminal 2 (Frontend)**:
-   ```bash
-   cd webapp
-   npm run dev
-   # Dev server runs on http://localhost:5173
-   ```
-
-5. **Open in browser**
-   ```
-   http://localhost:5173
-   ```
-
----
-
 ## 📁 Project Structure
 
 ```
-sign-and-speak/
-├── server.js                 # Express API server
-├── package.json              # Backend dependencies
-├── .env                      # Environment variables (not committed)
-├── design/                   # Design documentation and assets
-│   ├── assets/               # Logos and SVG files
-│   ├── Typography-System.md  # Type scale documentation
-│   └── Spacing-System.md     # 8pt grid guide
-└── webapp/                   # React frontend
-    ├── src/
-    │   ├── App.jsx           # Main React component with routing
-    │   ├── main.jsx          # React entry point
-    │   ├── styles.css        # Global styles + design system
-    │   └── components/
-    │       ├── ChildHome.jsx       # Child learning interface
-    │       ├── ParentDashboard.jsx # Parent analytics view
-    │       ├── NewHome.jsx         # Landing page
-    │       ├── TrainingMode.jsx    # Guided practice mode
-    │       ├── CameraPanel.jsx     # MediaPipe integration
-    │       ├── CoachWidget.jsx     # AI coach floating widget
-    │       ├── GoalRing.jsx        # Progress visualization
-    │       ├── StickerBook.jsx     # Reward system
-    │       └── CharacterPicker.jsx # Avatar selection
-    ├── index.html            # HTML entry point
-    ├── vite.config.js        # Vite build configuration
-    └── package.json          # Frontend dependencies
+Sign-and-Speak/
+├── docs/                     # Documentation
+│   ├── README.md             # Documentation index
+│   ├── DEPLOYMENT.md         # Deployment guide
+│   ├── PRE-COMMIT-CHECKLIST.md
+│   └── fixes/                # Implementation fix documentation
+├── design/                   # Design system documentation
+├── webapp/                   # React frontend
+│   ├── src/
+│   │   ├── components/       # React components
+│   │   ├── contexts/         # React Context providers
+│   │   ├── App.jsx           # Main React component
+│   │   └── styles.css        # Global styles
+│   ├── package.json
+│   └── vite.config.js
+├── legacy/                   # Legacy HTML/JS/CSS (deprecated)
+├── server.js                 # Express backend
+├── package.json              # Root dependencies
+├── vercel.json               # Vercel deployment config
+└── README.md                 # This file
 ```
 
 ---
 
-## 🎨 Design System
+## 📚 Documentation
 
-### **Typography Scale**
-Fluid responsive typography using CSS `clamp()`:
-- **Display**: `clamp(2.5rem, 5vw + 1rem, 4rem)` (40-64px)
-- **H1**: `clamp(2rem, 3vw + 1rem, 3rem)` (32-48px)
-- **H2**: `clamp(1.5rem, 2vw + 0.5rem, 2.25rem)` (24-36px)
-- **Body**: `clamp(0.9375rem, 0.5vw + 0.75rem, 1rem)` (15-16px)
-
-### **Spacing System**
-8pt grid with 13 systematic values:
-- `--space-1`: 4px (micro)
-- `--space-4`: 16px (base)
-- `--space-8`: 32px (large)
-- `--space-24`: 96px (hero)
-
-See [design/Typography-System.md](design/Typography-System.md) and [design/Spacing-System.md](design/Spacing-System.md) for full documentation.
+- **[docs/README.md](docs/README.md)** - Complete documentation index
+- **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** - Step-by-step deployment guide
+- **[design/](design/)** - Full design system documentation
+- **[docs/fixes/](docs/fixes/)** - Technical implementation improvements
 
 ---
 
@@ -248,23 +180,15 @@ See [design/Typography-System.md](design/Typography-System.md) and [design/Spaci
    ```
 
 2. **Configure environment variables**
-   
-   In Vercel dashboard:
-   - Go to **Settings** → **Environment Variables**
-   - Add `OPENAI_API_KEY` with your API key
-   - Or leave blank for demo mode
+   - In Vercel dashboard: Settings → Environment Variables
+   - Add `OPENAI_API_KEY` with your API key (or leave blank for demo mode)
 
 3. **Deploy**
    ```bash
-   vercel
+   npm run deploy
    ```
 
-4. **Production URL**
-   ```
-   https://sign-and-speak.vercel.app
-   ```
-
-See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment guide.
+See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** for detailed deployment instructions.
 
 ---
 
@@ -291,24 +215,10 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment guide.
 ## 📊 Sign Recognition
 
 ### **Hand Signs Detected** (15+)
-- 👋 Wave
-- ✋ Stop  
-- 👍 Good
-- 👎 No
-- 👌 OK
-- ☮️ Peace
-- 👏 Clap
-- 🙏 Thank You
-- ...and more
+👋 Wave • ✋ Stop • 👍 Good • 👎 No • 👌 OK • ☮️ Peace • 👏 Clap • 🙏 Thank You • ...and more
 
 ### **Facial Expressions** (7)
-- 😊 Happy
-- 😢 Sad
-- 😮 Surprised
-- 😠 Angry
-- 😐 Neutral
-- 😨 Fearful
-- 🤢 Disgusted
+😊 Happy • 😢 Sad • 😮 Surprised • 😠 Angry • 😐 Neutral • 😨 Fearful • 🤢 Disgusted
 
 ---
 
@@ -322,11 +232,16 @@ Contributions are welcome! Please follow these guidelines:
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-**Code Style**:
-- Use ESLint rules (configured in project)
-- Follow existing naming conventions
-- Add JSDoc comments for all functions
-- Update documentation for new features
+**Before committing**, review the **[docs/PRE-COMMIT-CHECKLIST.md](docs/PRE-COMMIT-CHECKLIST.md)**
+
+---
+
+## 🐛 Troubleshooting
+
+- **Camera doesn't start**: Ensure you're on HTTPS or `http://localhost` and have allowed camera permissions
+- **No audio**: Some browsers require a user gesture before text-to-speech works
+- **"Failed to get response from AI"**: Verify `OPENAI_API_KEY` is set in `.env` file
+- **Build errors**: Delete `node_modules` and `package-lock.json`, then run `npm install` again
 
 ---
 
@@ -342,7 +257,6 @@ This project is licensed under the **MIT License** – see [LICENSE](LICENSE) fi
 - **OpenAI** – GPT-4o-mini API for AI coaching
 - **Framer Motion** – Animation library
 - **Vercel** – Hosting platform
-- All open-source contributors and libraries
 
 ---
 
@@ -350,8 +264,8 @@ This project is licensed under the **MIT License** – see [LICENSE](LICENSE) fi
 
 **Project Maintainer**: Paul J.
 
-- GitHub: [@YOUR_USERNAME](https://github.com/YOUR_USERNAME)
-- Project Link: [https://github.com/YOUR_USERNAME/sign-and-speak](https://github.com/YOUR_USERNAME/sign-and-speak)
+- GitHub: [@pauljayakar30](https://github.com/pauljayakar30)
+- Repository: [Sign-and-Speak](https://github.com/pauljayakar30/Sign-and-Speak)
 
 ---
 
