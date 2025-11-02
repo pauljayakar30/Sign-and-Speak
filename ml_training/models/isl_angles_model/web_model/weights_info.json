@@ -1,0 +1,128 @@
+{
+  "layer_0_batch_normalization": {
+    "shapes": [
+      [
+        17
+      ],
+      [
+        17
+      ],
+      [
+        17
+      ],
+      [
+        17
+      ]
+    ],
+    "dtypes": [
+      "float32",
+      "float32",
+      "float32",
+      "float32"
+    ]
+  },
+  "layer_1_dense": {
+    "shapes": [
+      [
+        17,
+        256
+      ],
+      [
+        256
+      ]
+    ],
+    "dtypes": [
+      "float32",
+      "float32"
+    ]
+  },
+  "layer_3_batch_normalization_1": {
+    "shapes": [
+      [
+        256
+      ],
+      [
+        256
+      ],
+      [
+        256
+      ],
+      [
+        256
+      ]
+    ],
+    "dtypes": [
+      "float32",
+      "float32",
+      "float32",
+      "float32"
+    ]
+  },
+  "layer_4_dense_1": {
+    "shapes": [
+      [
+        256,
+        128
+      ],
+      [
+        128
+      ]
+    ],
+    "dtypes": [
+      "float32",
+      "float32"
+    ]
+  },
+  "layer_6_batch_normalization_2": {
+    "shapes": [
+      [
+        128
+      ],
+      [
+        128
+      ],
+      [
+        128
+      ],
+      [
+        128
+      ]
+    ],
+    "dtypes": [
+      "float32",
+      "float32",
+      "float32",
+      "float32"
+    ]
+  },
+  "layer_7_dense_2": {
+    "shapes": [
+      [
+        128,
+        64
+      ],
+      [
+        64
+      ]
+    ],
+    "dtypes": [
+      "float32",
+      "float32"
+    ]
+  },
+  "layer_9_dense_3": {
+    "shapes": [
+      [
+        64,
+        26
+      ],
+      [
+        26
+      ]
+    ],
+    "dtypes": [
+      "float32",
+      "float32"
+    ]
+  }
+}

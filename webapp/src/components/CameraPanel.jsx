@@ -3,6 +3,9 @@ import Skeleton from './Skeleton'
 import ErrorState from './ErrorState'
 import { useToast } from './Toast'
 import { useStars } from '../contexts/AppContext.jsx'
+import RecognitionModeSelector from './RecognitionModeSelector'
+import { islApi } from '../services/islApi'
+import { extractHandAngles, validateFeatures } from '../utils/handAngles'
 
 /**
  * Error Types for Comprehensive Error Handling
@@ -215,6 +218,26 @@ const CameraPanel = forwardRef(function CameraPanel(props, ref) {
   const [lastDetectedSign, setLastDetectedSign] = useState(null)
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false)
 
+  // NEW: Recognition mode state
+  const [recognitionMode, setRecognitionModeInternal] = useState('gestures') // 'isl', 'asl', 'gestures', 'custom'
+  const recognitionModeRef = useRef('gestures') // Ref to avoid stale closure
+  const [mlApiStatus, setMlApiStatus] = useState({ online: false, checking: true })
+  const [mlPrediction, setMlPrediction] = useState(null)
+  const [predictionHistory, setPredictionHistory] = useState([])
+  
+  // Wrapper for setRecognitionMode with logging
+  const setRecognitionMode = (mode) => {
+    console.log('🔄 setRecognitionMode called with:', mode)
+    console.log('📍 Previous mode:', recognitionMode)
+    recognitionModeRef.current = mode // Update ref immediately
+    setRecognitionModeInternal(mode)
+    console.log('✅ Mode state updated to:', mode)
+  }
+  
+  // Throttling for ML predictions
+  const lastPredictionTime = useRef(0)
+  const PREDICTION_INTERVAL = 500 // ms - predict every 500ms
+
   // Camera control refs
   const cameraRef = useRef(null)
   const handsRef = useRef(null)
@@ -348,6 +371,30 @@ const CameraPanel = forwardRef(function CameraPanel(props, ref) {
       }
     }, 5000) // Check every 5 seconds
   }
+
+  // Check ML API status on mount
+  useEffect(() => {
+    async function checkMLAPI() {
+      const status = await islApi.healthCheck()
+      setMlApiStatus(status)
+      
+      if (!status.online) {
+        console.warn('ML API is offline. ISL mode will not be available.')
+        console.info('To start the ML server: cd ml_training && .\\start_api.bat')
+      }
+    }
+    
+    checkMLAPI()
+    
+    // Recheck every 30 seconds
+    const interval = setInterval(checkMLAPI, 30000)
+    return () => clearInterval(interval)
+  }, [])
+  
+  // Log recognition mode changes
+  useEffect(() => {
+    console.log('🔄 Recognition mode changed to:', recognitionMode)
+  }, [recognitionMode])
 
   // Speech debounce
   const lastSpokenRef = useRef({ text: '', t: 0 })
@@ -595,6 +642,143 @@ const CameraPanel = forwardRef(function CameraPanel(props, ref) {
       }
     }
 
+    // ISL Recognition Function (ML-powered)
+    async function recognizeISL(leftHand, rightHand) {
+      // Throttle predictions to avoid overwhelming the API
+      const now = Date.now()
+      if (now - lastPredictionTime.current < PREDICTION_INTERVAL) {
+        return null // Skip this frame
+      }
+      
+      if (!mlApiStatus?.online) {
+        console.warn('ML API offline - cannot recognize ISL')
+        return {
+          sign: 'ML Offline',
+          confidence: 0,
+          mode: 'isl',
+          error: 'ML server not running'
+        }
+      }
+      
+      try {
+        // Extract hand angles
+        const features = extractHandAngles(leftHand, rightHand)
+        
+        // Validate features
+        if (!validateFeatures(features)) {
+          console.error('Invalid features extracted')
+          return null
+        }
+        
+        // Get prediction from ML API
+        const result = await islApi.predict(features)
+        
+        lastPredictionTime.current = now
+        
+        if (result.success) {
+          return {
+            sign: result.predicted_sign,
+            confidence: result.confidence,
+            mode: 'isl',
+            allPredictions: result.all_predictions?.slice(0, 3) // Top 3
+          }
+        } else {
+          console.error('ML prediction failed:', result.error)
+          return null
+        }
+      } catch (error) {
+        console.error('ISL recognition error:', error)
+        return null
+      }
+    }
+
+    // Daily Gestures Recognition (Rule-based) - uses existing logic
+    function recognizeDailyGestures(leftHand, rightHand) {
+      // Use the first available hand
+      const landmarks = leftHand || rightHand
+      if (!landmarks) return null
+      
+      // Call the existing recognizeSign function
+      const gestureRaw = recognizeSign(landmarks)
+      
+      if (gestureRaw && gestureRaw !== 'NONE') {
+        return {
+          sign: gestureRaw.replace('_', ' '),
+          confidence: 0.85, // Rule-based has fixed confidence
+          mode: 'gestures'
+        }
+      }
+      
+      return null
+    }
+
+    // Unified recognition function that routes to the appropriate recognizer
+    async function recognizeHandSign(results) {
+      if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+        setMlPrediction(null)
+        return null
+      }
+      
+      const currentMode = recognitionModeRef.current
+      console.log('🎯 recognizeHandSign called with mode:', currentMode)
+      
+      const leftHand = results.multiHandedness?.[0]?.label === 'Left' 
+        ? results.multiHandLandmarks[0] 
+        : results.multiHandLandmarks[1]
+        
+      const rightHand = results.multiHandedness?.[0]?.label === 'Right' 
+        ? results.multiHandLandmarks[0] 
+        : results.multiHandLandmarks[1]
+      
+      let prediction = null
+      
+      // Route to appropriate recognition method based on mode
+      console.log('🔀 Routing to mode:', currentMode)
+      switch (currentMode) {
+        case 'isl':
+          console.log('🇮🇳 Calling recognizeISL')
+          prediction = await recognizeISL(leftHand, rightHand)
+          console.log('🇮🇳 ISL prediction:', prediction)
+          break
+          
+        case 'asl':
+          // ASL recognition (coming soon)
+          prediction = { sign: 'Coming Soon', confidence: 0, mode: 'asl' }
+          break
+          
+        case 'gestures':
+          console.log('👋 Calling recognizeDailyGestures')
+          prediction = recognizeDailyGestures(leftHand, rightHand)
+          console.log('👋 Gestures prediction:', prediction)
+          break
+          
+        case 'custom':
+          // Custom gestures (coming soon)
+          prediction = { sign: 'Coming Soon', confidence: 0, mode: 'custom' }
+          break
+          
+        default:
+          console.warn('❌ Unknown recognition mode:', currentMode)
+          prediction = null
+      }
+      
+      if (prediction && prediction.sign !== 'Coming Soon') {
+        setMlPrediction(prediction)
+        setCurrentConfidence(prediction.confidence)
+        
+        // Add to history
+        setPredictionHistory(prev => {
+          const newHistory = [prediction, ...prev].slice(0, 10) // Keep last 10
+          return newHistory
+        })
+        
+        // Update label for existing UI compatibility
+        setLabel(prediction.sign)
+      }
+      
+      return prediction
+    }
+
     function recognizeSign(landmarks) {
       const wrist = landmarks[0]
       const thumbTip = landmarks[4]
@@ -775,6 +959,11 @@ const CameraPanel = forwardRef(function CameraPanel(props, ref) {
       ctx.clearRect(0,0,canvas.width,canvas.height)
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
       
+        // Call new unified recognition function
+        recognizeHandSign(results).catch(err => {
+          console.error('Recognition error:', err)
+        })
+      
         let labelsInFrame = []
         const handsLms = results.multiHandLandmarks || []
         
@@ -792,42 +981,54 @@ const CameraPanel = forwardRef(function CameraPanel(props, ref) {
         
         if (handsLms.length > 0) {
           for (const landmarks of handsLms) {
-          // Draw hand skeleton with enhanced styling
-          if (showSkeleton) {
-            try {
-              // Draw connections (skeleton lines) with gradient effect
-              window.drawConnectors?.(ctx, landmarks, window.HAND_CONNECTIONS, { 
-                color: '#00FF88', 
-                lineWidth: 4 
-              })
-              // Draw landmarks (joint points) 
-              window.drawLandmarks?.(ctx, landmarks, { 
-                color: '#FF3B5C', 
-                lineWidth: 2,
-                radius: 4
-              })
-            } catch (e) {
-              console.warn('Hand drawing failed:', e)
+            // Draw hand skeleton with enhanced styling
+            if (showSkeleton) {
+              try {
+                // Draw connections (skeleton lines) with gradient effect
+                window.drawConnectors?.(ctx, landmarks, window.HAND_CONNECTIONS, { 
+                  color: '#00FF88', 
+                  lineWidth: 4 
+                })
+                // Draw landmarks (joint points) 
+                window.drawLandmarks?.(ctx, landmarks, { 
+                  color: '#FF3B5C', 
+                  lineWidth: 2,
+                  radius: 4
+                })
+              } catch (e) {
+                console.warn('Hand drawing failed:', e)
+              }
+            }
+            
+            // Only run old recognition logic if in 'gestures' mode
+            const currentMode = recognitionModeRef.current
+            console.log('🔍 onHandResults checking mode:', currentMode)
+            if (currentMode === 'gestures') {
+              console.log('✅ Running gestures mode recognition')
+              const raw = recognizeSign(landmarks)
+              labelsInFrame.push(raw)
+              
+              // Track index curl distance for beckon pattern
+              const palmCenter = getPalmCenter(landmarks)
+              const handSize = getHandSize(landmarks)
+              const indexTip = landmarks[8]
+              const indexDist = getDistance(indexTip, palmCenter) / (handSize || 1)
+              trackIndexCurl(indexDist)
+            } else {
+              console.log('❌ Skipping gestures recognition (mode is:', currentMode, ')')
             }
           }
-          
-          const raw = recognizeSign(landmarks)
-            labelsInFrame.push(raw)
-            // Track index curl distance for beckon pattern
-            const palmCenter = getPalmCenter(landmarks)
-            const handSize = getHandSize(landmarks)
-            const indexTip = landmarks[8]
-            const indexDist = getDistance(indexTip, palmCenter) / (handSize || 1)
-            trackIndexCurl(indexDist)
-        }
         
-        // Calculate confidence score based on stability
-        const confidence = frameHistory.length > 0 ? 
-          Math.min(100, Math.round((frameHistory.filter(s => s.size > 0).length / N_FRAMES) * 100)) : 0
-        setCurrentConfidence(confidence)
+          // Calculate confidence score based on stability (only for gestures mode)
+          const currentMode = recognitionModeRef.current
+          if (currentMode === 'gestures') {
+            const confidence = frameHistory.length > 0 ? 
+              Math.min(100, Math.round((frameHistory.filter(s => s.size > 0).length / N_FRAMES) * 100)) : 0
+            setCurrentConfidence(confidence)
+          }
         
-          // Two-hand combined gestures
-          if (handsLms.length >= 2) {
+          // Two-hand combined gestures (only in gestures mode)
+          if (currentMode === 'gestures' && handsLms.length >= 2) {
             const lm1 = handsLms[0], lm2 = handsLms[1]
             const c1 = getPalmCenter(lm1), c2 = getPalmCenter(lm2)
             const size1 = getHandSize(lm1), size2 = getHandSize(lm2)
@@ -861,38 +1062,41 @@ const CameraPanel = forwardRef(function CameraPanel(props, ref) {
             labelsInFrame = labelsInFrame.filter(l => l !== 'STOP' && l !== 'WAVE')
           }
           }
-        // Global pattern: Come Here via index curl oscillation
-        if (hasComeHerePattern(0.20, 0.36)) {
-          labelsInFrame.push('COME_HERE')
+          
+          // Global pattern: Come Here via index curl oscillation
+          if (hasComeHerePattern(0.20, 0.36)) {
+            labelsInFrame.push('COME_HERE')
+          }
+          
+          // Draw confidence overlay (only in gestures mode)
+          if (showConfidence && labelsInFrame.length > 0 && labelsInFrame[0] !== 'NONE') {
+            ctx.save()
+            const detectedSign = labelsInFrame[0].replace('_', ' ')
+            const confidence = frameHistory.length > 0 ? 
+              Math.min(100, Math.round((frameHistory.filter(s => s.size > 0).length / N_FRAMES) * 100)) : 0
+            const confidencePercent = Math.round(confidence)
+            
+            // Background box
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
+            ctx.fillRect(10, canvas.height - 70, 220, 60)
+            
+            // Sign label
+            ctx.font = 'bold 24px system-ui'
+            ctx.fillStyle = confidence > 70 ? '#10B981' : confidence > 40 ? '#F59E0B' : '#EF4444'
+            ctx.textAlign = 'left'
+            ctx.fillText(detectedSign, 20, canvas.height - 42)
+            
+            // Confidence percentage
+            ctx.font = '18px system-ui'
+            ctx.fillStyle = '#FFFFFF'
+            ctx.fillText(`${confidencePercent}% confidence`, 20, canvas.height - 18)
+            
+            ctx.restore()
+          }
+        } else {
+          // No hands detected - clear confidence (only in gestures mode)
+          setCurrentConfidence(0)
         }
-        
-        // Draw confidence overlay
-        if (showConfidence && labelsInFrame.length > 0 && labelsInFrame[0] !== 'NONE') {
-          ctx.save()
-          const detectedSign = labelsInFrame[0].replace('_', ' ')
-          const confidencePercent = Math.round(confidence)
-          
-          // Background box
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
-          ctx.fillRect(10, canvas.height - 70, 220, 60)
-          
-          // Sign label
-          ctx.font = 'bold 24px system-ui'
-          ctx.fillStyle = confidence > 70 ? '#10B981' : confidence > 40 ? '#F59E0B' : '#EF4444'
-          ctx.textAlign = 'left'
-          ctx.fillText(detectedSign, 20, canvas.height - 42)
-          
-          // Confidence percentage
-          ctx.font = '18px system-ui'
-          ctx.fillStyle = '#FFFFFF'
-          ctx.fillText(`${confidencePercent}% confidence`, 20, canvas.height - 18)
-          
-          ctx.restore()
-        }
-      } else {
-        // No hands detected - clear confidence
-        setCurrentConfidence(0)
-      }
       
       // Draw success overlay when correct sign is detected
       if (showSuccessOverlay) {
@@ -929,7 +1133,15 @@ const CameraPanel = forwardRef(function CameraPanel(props, ref) {
         ctx.restore()
       }
       
-      processStable(labelsInFrame)
+      // Only process stable recognition for gestures mode
+      const finalMode = recognitionModeRef.current
+      console.log('📊 processStable check - mode:', finalMode, 'labelsInFrame:', labelsInFrame.length)
+      if (finalMode === 'gestures') {
+        console.log('✅ Calling processStable with labels:', labelsInFrame)
+        processStable(labelsInFrame)
+      } else {
+        console.log('❌ Skipping processStable (not in gestures mode)')
+      }
       ctx.restore()
     }
 
@@ -1137,6 +1349,130 @@ const CameraPanel = forwardRef(function CameraPanel(props, ref) {
 
   return (
     <div className={`camera-panel ${detectionStatus === 'correct' ? 'detection-correct' : detectionStatus === 'incorrect' ? 'detection-incorrect' : ''}`}>
+      {/* Recognition Mode Selector */}
+      <RecognitionModeSelector
+        selectedMode={recognitionMode}
+        onModeChange={setRecognitionMode}
+        mlApiStatus={mlApiStatus}
+      />
+      
+      {/* Current Mode Banner */}
+      <div style={{
+        padding: '0.75rem 1rem',
+        background: recognitionMode === 'isl' ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' : 
+                   recognitionMode === 'gestures' ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)' :
+                   'linear-gradient(135deg, #6B7280 0%, #4B5563 100%)',
+        color: 'white',
+        borderRadius: '8px',
+        marginBottom: '1rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        fontSize: '0.875rem',
+        fontWeight: '600',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ fontSize: '1.25rem' }}>
+            {recognitionMode === 'isl' ? '🇮🇳' : 
+             recognitionMode === 'gestures' ? '👋' :
+             recognitionMode === 'asl' ? '🇺🇸' : '✨'}
+          </span>
+          <span>
+            ACTIVE MODE: {recognitionMode === 'isl' ? 'Indian Sign Language (ISL)' : 
+                         recognitionMode === 'gestures' ? 'Daily Gestures' :
+                         recognitionMode === 'asl' ? 'American Sign Language' : 'Custom Signs'}
+          </span>
+        </div>
+        <div style={{ 
+          padding: '0.25rem 0.75rem', 
+          background: 'rgba(255, 255, 255, 0.2)',
+          borderRadius: '12px',
+          fontSize: '0.75rem'
+        }}>
+          {recognitionMode === 'isl' ? '🤖 ML-Powered' : 
+           recognitionMode === 'gestures' ? '📐 Rule-Based' : 'Custom'}
+        </div>
+      </div>
+      
+      {/* ML Prediction Display */}
+      {mlPrediction && recognitionMode !== 'gestures' && (
+        <div className="ml-prediction-display" style={{
+          padding: '1rem',
+          background: 'rgba(99, 102, 241, 0.1)',
+          borderRadius: '12px',
+          marginBottom: '1rem',
+          border: '2px solid rgba(99, 102, 241, 0.3)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ fontSize: '3rem' }}>
+              {mlPrediction.mode === 'isl' ? '🤟' : '✋'}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ 
+                fontSize: '1.5rem', 
+                fontWeight: 'bold',
+                color: 'var(--text-primary, #1F2937)'
+              }}>
+                {mlPrediction.sign}
+              </div>
+              <div style={{ 
+                fontSize: '0.875rem',
+                color: 'var(--text-muted, #6B7280)',
+                marginTop: '0.25rem'
+              }}>
+                Confidence: {(mlPrediction.confidence * 100).toFixed(1)}%
+              </div>
+              {mlPrediction.allPredictions && mlPrediction.allPredictions.length > 0 && (
+                <div style={{ 
+                  fontSize: '0.75rem',
+                  color: 'var(--text-muted, #6B7280)',
+                  marginTop: '0.5rem'
+                }}>
+                  Top 3: {mlPrediction.allPredictions.map(p => `${p.label} (${(p.confidence * 100).toFixed(0)}%)`).join(', ')}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Prediction History */}
+      {predictionHistory.length > 0 && recognitionMode !== 'gestures' && (
+        <div className="prediction-history" style={{
+          padding: '0.75rem',
+          background: 'rgba(0, 0, 0, 0.02)',
+          borderRadius: '8px',
+          marginBottom: '1rem'
+        }}>
+          <div style={{ 
+            fontSize: '0.75rem',
+            fontWeight: '600',
+            marginBottom: '0.5rem',
+            color: 'var(--text-muted, #6B7280)'
+          }}>
+            Recent Predictions:
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            {predictionHistory.slice(0, 5).map((pred, i) => (
+              <span 
+                key={i}
+                style={{
+                  padding: '0.25rem 0.75rem',
+                  background: 'white',
+                  borderRadius: '12px',
+                  fontSize: '0.75rem',
+                  border: '1px solid rgba(0, 0, 0, 0.1)',
+                  opacity: 1 - (i * 0.15)
+                }}
+              >
+                {pred.sign}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+      
       {/* Comprehensive Error State with Instructions */}
       {error && errorType && (
         <ErrorState

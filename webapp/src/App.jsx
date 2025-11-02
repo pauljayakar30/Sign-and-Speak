@@ -21,6 +21,7 @@ import ParentDashboard from './components/ParentDashboard.jsx'
 import NewHome from './components/NewHome.jsx'
 import CoachWidget from './components/CoachWidget.jsx'
 import TrainingMode from './components/TrainingMode.jsx'
+import AdultLearning from './components/AdultLearning.jsx'
 import { ToastProvider } from './components/Toast.jsx'
 import { useAvatar } from './contexts/AppContext.jsx'
 
@@ -142,6 +143,10 @@ export default function App() {
                 <Target className="tab-icon" size={20} strokeWidth={2} aria-hidden="true" />
                 <span className="tab-label">Train</span>
               </TabButton>
+              <TabButton id="adult" current={tab} onClick={(id)=>{ setTab(id); setMenuOpen(false) }}>
+                <User className="tab-icon" size={20} strokeWidth={2} aria-hidden="true" />
+                <span className="tab-label">Adult</span>
+              </TabButton>
             </nav>
 
             {/* Avatar Badge at Bottom */}
@@ -188,6 +193,11 @@ export default function App() {
             {tab === 'train' && (
               <motion.div key="train" initial="enter" animate="center" exit="exit" variants={variants}>
                 <TrainingMode />
+              </motion.div>
+            )}
+            {tab === 'adult' && (
+              <motion.div key="adult" initial="enter" animate="center" exit="exit" variants={variants}>
+                <AdultLearning />
               </motion.div>
             )}
           </AnimatePresence>

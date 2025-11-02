@@ -1,0 +1,22 @@
+{
+  "feature_names": [
+    "both_hands",
+    "thumb_Left",
+    "index_finger_Left",
+    "middle_finger_Left",
+    "ring_finger_Left",
+    "pinky_Left",
+    "palm_angle_Left_left",
+    "palm_angle_Left_right",
+    "hand_Left_ground_angle",
+    "thumb_Right",
+    "index_finger_Right",
+    "middle_finger_Right",
+    "ring_finger_Right",
+    "pinky_Right",
+    "palm_angle_Right_left",
+    "palm_angle_Right_right",
+    "hand_Right_ground_angle"
+  ],
+  "num_features": 17
+}
