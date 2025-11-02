@@ -37,12 +37,15 @@ def load_model_and_metadata():
     """Load the trained model and associated metadata"""
     global model, labels, feature_names, scaler
     
-    print("Loading ISL model...")
+    print("=" * 70)
+    print("🔄 Loading ISL model...")
+    print("=" * 70)
     
     # Load model
     model_path = MODEL_DIR / 'model.keras'
+    print(f"📂 Model path: {model_path}")
     model = tf.keras.models.load_model(model_path)
-    print(f"✓ Model loaded from {model_path}")
+    print(f"✓ Model loaded successfully")
     
     # Load labels
     with open(MODEL_DIR / 'labels.json', 'r') as f:
@@ -64,6 +67,10 @@ def load_model_and_metadata():
     print("=" * 70)
     print("🚀 ISL Recognition API Ready!")
     print("=" * 70)
+
+# Load model when module is imported (for gunicorn --preload)
+print("🌐 Initializing Flask app...")
+load_model_and_metadata()
 
 @app.route('/health', methods=['GET'])
 def health_check():
