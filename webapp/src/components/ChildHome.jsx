@@ -1,7 +1,8 @@
 /**
- * ChildHome Component - Redesigned
+ * ChildHome Component - Google Meet Style Layout
  * 
  * Playful, engaging view for child users featuring interactive sign language practice.
+ * Camera feed on left, controls and stats on right (like Google Meet).
  */
 import React, { useState } from 'react'
 import CameraPanel from './CameraPanel.jsx'
@@ -181,8 +182,80 @@ export default function ChildHome() {
         </details>
       </div>
 
-      {/* Camera Panel Overlay */}
-      {cameraOn && <CameraPanel />}
+      {/* Google Meet Style Camera Layout */}
+      {cameraOn && (
+        <div className="meet-layout">
+          {/* Left Side - Camera Feed */}
+          <div className="meet-camera-section">
+            <CameraPanel />
+          </div>
+
+          {/* Right Side - Controls & Info */}
+          <div className="meet-sidebar">
+            <div className="meet-header">
+              <div className="meet-avatar">{avatarEmoji}</div>
+              <div className="meet-user-info">
+                <h3>Practice Session</h3>
+                <p className="meet-subtitle">Show clear signs to earn stars!</p>
+              </div>
+              <button className="btn-close" onClick={() => setCameraOn(false)}>
+                ✕
+              </button>
+            </div>
+
+            {/* Stats Panel */}
+            <div className="meet-stats">
+              <div className="meet-stat-item">
+                <div className="meet-stat-icon">⭐</div>
+                <div>
+                  <div className="meet-stat-value">{stars}</div>
+                  <div className="meet-stat-label">Stars Today</div>
+                </div>
+              </div>
+              <div className="meet-stat-item">
+                <div className="meet-stat-icon">🎯</div>
+                <div>
+                  <div className="meet-stat-value">{progress}%</div>
+                  <div className="meet-stat-label">Goal Progress</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Goal Ring */}
+            <div className="meet-goal-section">
+              <h4>Today's Progress</h4>
+              <div className="meet-goal-ring">
+                <GoalRing value={stars} goal={DAILY_GOAL} size={100} stroke={10} />
+              </div>
+              {starsLeft > 0 ? (
+                <p className="meet-goal-text">
+                  <strong>{starsLeft} more</strong> to reach your goal!
+                </p>
+              ) : (
+                <p className="meet-goal-text success">
+                  🎉 Goal complete!
+                </p>
+              )}
+            </div>
+
+            {/* Stickers Preview */}
+            <div className="meet-stickers-section">
+              <h4>🎨 New Stickers</h4>
+              <div className="meet-stickers-preview">
+                <StickerBook stars={stars} max={DAILY_GOAL} />
+              </div>
+            </div>
+
+            {/* Tips */}
+            <div className="meet-tips">
+              <div className="tip-icon">💡</div>
+              <div className="tip-content">
+                <strong>Pro Tip:</strong> Hold each sign clearly for 2 seconds to earn your star!
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }
