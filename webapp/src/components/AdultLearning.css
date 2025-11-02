@@ -63,24 +63,16 @@
   color: #111827;
 }
 
-/* ===== MAIN CONTENT - GOOGLE MEET STYLE ===== */
+/* ===== MAIN CONTENT ===== */
 .adult-learning-content {
   display: grid;
-  grid-template-columns: 1fr 450px;
-  gap: 0;
-  max-width: 100%;
-  margin: 0;
-  padding: 0;
+  grid-template-columns: 280px 1fr 320px;
+  gap: 1.5rem;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 2rem;
   flex: 1;
   width: 100%;
-  height: calc(100vh - 80px);
-  overflow: hidden;
-  grid-template-areas: "camera sidebar";
-}
-
-/* Hide left panel - we'll put sign list in sidebar */
-.sign-list-panel {
-  display: none;
 }
 
 /* ===== LEFT PANEL - SIGN LIST ===== */
@@ -204,28 +196,18 @@
   background: #ffffff;
 }
 
-/* ===== CENTER PANEL - PRACTICE (CAMERA FEED) ===== */
+/* ===== CENTER PANEL - PRACTICE ===== */
 .practice-panel {
   display: flex;
   flex-direction: column;
-  background: #1f2937;
-  height: 100%;
-  overflow: hidden;
-  position: relative;
+  gap: 1.5rem;
 }
 
 .current-sign-card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border: none;
-  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
   padding: 1.5rem;
-  position: absolute;
-  top: 24px;
-  left: 24px;
-  right: 24px;
-  z-index: 10;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
 }
 
 .sign-header {
@@ -297,18 +279,13 @@
 }
 
 .camera-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: #000000;
-  border: none;
-  border-radius: 0;
+  position: relative;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  aspect-ratio: 4 / 3;
+  max-height: 600px;
 }
 
 .detection-overlay {
@@ -374,44 +351,38 @@
   border-color: #111827;
 }
 
-/* ===== RIGHT PANEL - PROGRESS (GOOGLE MEET STYLE SIDEBAR) ===== */
+/* ===== RIGHT PANEL - PROGRESS ===== */
 .progress-panel {
   background: #ffffff;
-  border-left: 1px solid #e5e7eb;
-  padding: 0;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+  height: fit-content;
+  position: sticky;
+  top: 100px;
+  max-height: calc(100vh - 120px);
   overflow-y: auto;
-  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.08);
 }
 
 .progress-panel h3 {
   font-size: 1.125rem;
   font-weight: 600;
   color: #111827;
-  margin: 0;
-  padding: 24px 24px 16px;
-  border-bottom: 1px solid #e5e7eb;
-  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+  margin: 0 0 1.5rem 0;
 }
 
 .progress-stats {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 12px;
-  padding: 20px 24px;
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
+  gap: 1rem;
+  margin-bottom: 2rem;
 }
 
 .progress-stat-card {
-  padding: 16px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 8px;
   text-align: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .progress-stat-value {
@@ -430,9 +401,7 @@
 }
 
 .category-progress {
-  padding: 24px;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
+  margin-top: 2rem;
 }
 
 .category-progress h4 {
@@ -498,23 +467,22 @@
 }
 
 /* ===== RESPONSIVE ===== */
+@media (max-width: 1400px) {
+  .adult-learning-content {
+    grid-template-columns: 240px 1fr 280px;
+  }
+}
+
 @media (max-width: 1200px) {
   .adult-learning-content {
     grid-template-columns: 1fr;
-    height: auto;
-    min-height: calc(100vh - 80px);
+    gap: 1rem;
   }
   
-  .practice-panel {
-    min-height: 500px;
-    height: 60vh;
-  }
-  
+  .sign-list-panel,
   .progress-panel {
-    height: auto;
-    border-left: none;
-    border-top: 1px solid #e5e7eb;
-    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.08);
+    position: static;
+    max-height: none;
   }
   
   .header-stats {
