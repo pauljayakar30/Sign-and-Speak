@@ -128,123 +128,115 @@ export default function ParentDashboard() {
 
   return (
     <section className="parent-view">
-      <div className="parent-header">
-        <h1 className="parent-title">Parent Dashboard</h1>
-        <p className="parent-subtitle">Monitor your child's learning progress and get AI-powered insights</p>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="parent-stats-grid">
-        <div className="parent-stat-card stars">
-          <div className="stat-header">
-            <span className="stat-icon-lg">⭐</span>
-            <div className="stat-trend up">↑ +{Math.floor(stats.totalStars * 0.15)}</div>
-          </div>
-          <div className="stat-main-value">{stats.totalStars}</div>
-          <div className="stat-label-text">Total Stars</div>
-        </div>
-
-        <div className="parent-stat-card signs">
-          <div className="stat-header">
-            <span className="stat-icon-lg">🤟</span>
-            <div className="stat-trend up">↑ +{Math.floor(stats.uniqueSigns * 0.3)}</div>
-          </div>
-          <div className="stat-main-value">{stats.uniqueSigns}</div>
-          <div className="stat-label-text">Unique Signs</div>
-        </div>
-
-        <div className="parent-stat-card time">
-          <div className="stat-header">
-            <span className="stat-icon-lg">⏱️</span>
-            <div className="stat-trend up">↑ {Math.floor(stats.minutesPracticed * 0.2)}m</div>
-          </div>
-          <div className="stat-main-value">{stats.minutesPracticed}</div>
-          <div className="stat-label-text">Minutes Practiced</div>
-        </div>
-
-        <div className="parent-stat-card mood">
-          <div className="stat-header">
-            <span className="stat-icon-lg">😊</span>
-          </div>
-          <div className="stat-main-value">{stats.lastMood}</div>
-          <div className="stat-label-text">Current Mood</div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="parent-content">
-        {/* Activity Feed */}
-        <div className="parent-card">
-          <div className="parent-card-header">
-            <h2 className="parent-card-title">
-              <span className="title-icon">📊</span>
-              Live Activity Feed
-            </h2>
-            <span className="parent-card-action">View All</span>
-          </div>
-
-          {feed.length === 0 ? (
-            <div className="feed-empty">
-              <div className="feed-empty-icon">📭</div>
-              <p className="feed-empty-text">No activity yet. {!code ? 'Generate a pairing code to get started.' : 'Waiting for child to connect...'}</p>
-              {!code && (
-                <button className="btn-primary" onClick={generateCode}>
-                  Generate Pairing Code
-                </button>
-              )}
+      {/* Main Split Layout - Activity Feed Left, Controls Right */}
+      <div className="parent-split-layout">
+        {/* Left Side - Activity Feed & Stats */}
+        <div className="parent-feed-section">
+          {/* Quick Stats Grid */}
+          <div className="parent-stats-grid-compact">
+            <div className="parent-stat-card stars">
+              <div className="stat-header">
+                <span className="stat-icon-lg">⭐</span>
+                <div className="stat-trend up">↑ +{Math.floor(stats.totalStars * 0.15)}</div>
+              </div>
+              <div className="stat-main-value">{stats.totalStars}</div>
+              <div className="stat-label-text">Total Stars</div>
             </div>
-          ) : (
-            <div className="activity-feed">
-              {feed.slice().reverse().map((e, i) => {
-                const dt = new Date(e.t).toLocaleTimeString()
-                
-                if (e.type === 'sign') {
-                  const val = e.payload?.value ?? e.value ?? ''
-                  return (
-                    <motion.div 
-                      key={i} 
-                      className="feed-item"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                    >
-                      <div className="feed-icon sign">🤟</div>
-                      <div className="feed-content">
-                        <p className="feed-text">Recognized sign: <strong>{val}</strong></p>
-                        <p className="feed-time">{dt}</p>
-                      </div>
-                    </motion.div>
-                  )
-                }
-                
-                if (e.type === 'mood') {
-                  const val = e.payload?.value ?? e.value ?? ''
-                  return (
-                    <motion.div 
-                      key={i} 
-                      className="feed-item"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                    >
-                      <div className="feed-icon mood">😊</div>
-                      <div className="feed-content">
-                        <p className="feed-text">Mood detected: <strong>{val}</strong></p>
-                        <p className="feed-time">{dt}</p>
-                      </div>
-                    </motion.div>
-                  )
-                }
-                
-                return null
-              })}
+
+            <div className="parent-stat-card signs">
+              <div className="stat-header">
+                <span className="stat-icon-lg">🤟</span>
+                <div className="stat-trend up">↑ +{Math.floor(stats.uniqueSigns * 0.3)}</div>
+              </div>
+              <div className="stat-main-value">{stats.uniqueSigns}</div>
+              <div className="stat-label-text">Unique Signs</div>
             </div>
-          )}
+
+            <div className="parent-stat-card time">
+              <div className="stat-header">
+                <span className="stat-icon-lg">⏱️</span>
+                <div className="stat-trend up">↑ {Math.floor(stats.minutesPracticed * 0.2)}m</div>
+              </div>
+              <div className="stat-main-value">{stats.minutesPracticed}</div>
+              <div className="stat-label-text">Minutes Practiced</div>
+            </div>
+
+            <div className="parent-stat-card mood">
+              <div className="stat-header">
+                <span className="stat-icon-lg">😊</span>
+              </div>
+              <div className="stat-main-value">{stats.lastMood}</div>
+              <div className="stat-label-text">Current Mood</div>
+            </div>
+          </div>
+
+          {/* Activity Feed */}
+          <div className="parent-card activity-feed-card">
+            <div className="parent-card-header">
+              <h2 className="parent-card-title">
+                <span className="title-icon">📊</span>
+                Live Activity Feed
+              </h2>
+            </div>
+
+            {feed.length === 0 ? (
+              <div className="feed-empty">
+                <div className="feed-empty-icon">📭</div>
+                <p className="feed-empty-text">No activity yet. {!code ? 'Generate a pairing code to get started.' : 'Waiting for child to connect...'}</p>
+              </div>
+            ) : (
+              <div className="activity-feed">
+                {feed.slice().reverse().map((e, i) => {
+                  const dt = new Date(e.t).toLocaleTimeString()
+                  
+                  if (e.type === 'sign') {
+                    const val = e.payload?.value ?? e.value ?? ''
+                    return (
+                      <motion.div 
+                        key={i} 
+                        className="feed-item"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                      >
+                        <div className="feed-icon sign">🤟</div>
+                        <div className="feed-content">
+                          <p className="feed-text">Recognized sign: <strong>{val}</strong></p>
+                          <p className="feed-time">{dt}</p>
+                        </div>
+                      </motion.div>
+                    )
+                  }
+                  
+                  if (e.type === 'mood') {
+                    const val = e.payload?.value ?? e.value ?? ''
+                    return (
+                      <motion.div 
+                        key={i} 
+                        className="feed-item"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                      >
+                        <div className="feed-icon mood">😊</div>
+                        <div className="feed-content">
+                          <p className="feed-text">Mood detected: <strong>{val}</strong></p>
+                          <p className="feed-time">{dt}</p>
+                        </div>
+                      </motion.div>
+                    )
+                  }
+                  
+                  return null
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Sidebar */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-          {/* Pairing */}
+        {/* Right Side - Controls and AI Coach */}
+        <div className="parent-controls-section">
+          {/* Pairing Card */}
           <div className="parent-card pairing-card">
             <div className="parent-card-header">
               <h2 className="parent-card-title">
@@ -276,7 +268,7 @@ export default function ParentDashboard() {
             </div>
           </div>
 
-          {/* Trend */}
+          {/* Trend Card */}
           <div className="parent-card trend-card">
             <div className="parent-card-header">
               <h2 className="parent-card-title">
@@ -290,67 +282,67 @@ export default function ParentDashboard() {
             </div>
             <p className="trend-description">Last 24 minutes of practice activity</p>
           </div>
-        </div>
-      </div>
 
-      {/* AI Coach */}
-      <div className="parent-card ai-coach-card">
-        <div className="parent-card-header">
-          <h2 className="parent-card-title">
-            <span className="title-icon">🤖</span>
-            AI Learning Coach
-          </h2>
-        </div>
+          {/* AI Coach Card */}
+          <div className="parent-card ai-coach-card">
+            <div className="parent-card-header">
+              <h2 className="parent-card-title">
+                <span className="title-icon">🤖</span>
+                AI Learning Coach
+              </h2>
+            </div>
 
-        <div className="ai-quick-actions">
-          <button 
-            className="ai-quick-btn" 
-            onClick={() => askEndpoint('/ask-weekly', 'Write a one-paragraph weekly progress summary.', 'weekly summary')} 
-            disabled={loading}
-          >
-            <span>📅</span>
-            Weekly Summary
-          </button>
-          <button 
-            className="ai-quick-btn" 
-            onClick={() => askEndpoint('/ask-daily', 'Suggest 3 playful daily practice ideas.', 'daily ideas')} 
-            disabled={loading}
-          >
-            <span>💡</span>
-            Daily Ideas
-          </button>
-          <button 
-            className="ai-quick-btn" 
-            onClick={() => askEndpoint('/ask-insights', 'List 3 next steps for the parent.', 'insights')} 
-            disabled={loading}
-          >
-            <span>🎯</span>
-            Next Steps
-          </button>
-        </div>
+            <div className="ai-quick-actions">
+              <button 
+                className="ai-quick-btn" 
+                onClick={() => askEndpoint('/ask-weekly', 'Write a one-paragraph weekly progress summary.', 'weekly summary')} 
+                disabled={loading}
+              >
+                <span>📅</span>
+                Weekly Summary
+              </button>
+              <button 
+                className="ai-quick-btn" 
+                onClick={() => askEndpoint('/ask-daily', 'Suggest 3 playful daily practice ideas.', 'daily ideas')} 
+                disabled={loading}
+              >
+                <span>💡</span>
+                Daily Ideas
+              </button>
+              <button 
+                className="ai-quick-btn" 
+                onClick={() => askEndpoint('/ask-insights', 'List 3 next steps for the parent.', 'insights')} 
+                disabled={loading}
+              >
+                <span>🎯</span>
+                Next Steps
+              </button>
+            </div>
 
-        <div className="ai-custom-input">
-          <input 
-            type="text"
-            className="ai-input-field"
-            value={prompt} 
-            onChange={e => setPrompt(e.target.value)} 
-            placeholder="Ask the AI coach anything..."
-            onKeyPress={e => e.key === 'Enter' && !loading && askAI()}
-          />
-          <button className="btn-secondary" onClick={askAI} disabled={loading}>
-            {loading ? 'Thinking...' : 'Ask'}
-          </button>
-        </div>
+            <div className="ai-custom-input">
+              <input 
+                type="text"
+                className="ai-input-field"
+                value={prompt} 
+                onChange={e => setPrompt(e.target.value)} 
+                placeholder="Ask the AI coach anything..."
+                onKeyPress={e => e.key === 'Enter' && !loading && askAI()}
+              />
+              <button className="btn-secondary" onClick={askAI} disabled={loading}>
+                {loading ? 'Thinking...' : 'Ask'}
+              </button>
+            </div>
 
-        <div className={`ai-response-box ${!aiText && !loading ? 'empty' : ''}`}>
-          {loading ? (
-            <Skeleton variant="text" lines={3} />
-          ) : aiText ? (
-            aiText
-          ) : (
-            'AI responses will appear here. Try asking a question or use the quick actions above!'
-          )}
+            <div className={`ai-response-box ${!aiText && !loading ? 'empty' : ''}`}>
+              {loading ? (
+                <Skeleton variant="text" lines={3} />
+              ) : aiText ? (
+                aiText
+              ) : (
+                'AI responses will appear here. Try asking a question or use the quick actions above!'
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </section>

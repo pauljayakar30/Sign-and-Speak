@@ -15,7 +15,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Home, GraduationCap, Users, Target, User } from 'lucide-react'
+import { Home, BookOpen, Target, BarChart3 } from 'lucide-react'
 import ChildHome from './components/ChildHome.jsx'
 import ParentDashboard from './components/ParentDashboard.jsx'
 import NewHome from './components/NewHome.jsx'
@@ -40,6 +40,9 @@ function TabButton({ id, current, onClick, children }) {
 export default function App() {
   // Navigation state
   const [tab, setTab] = useState('home')
+  
+  // Practice mode: 'child' or 'adult'
+  const [practiceMode, setPracticeMode] = useState('child')
   
   // Current user's selected avatar character (from context)
   const { avatar } = useAvatar()
@@ -122,31 +125,42 @@ export default function App() {
                 <Home className="tab-icon" size={20} strokeWidth={2} aria-hidden="true" />
                 <span className="tab-label">Home</span>
               </TabButton>
-              <TabButton id="child" current={tab} onClick={(id)=>{ setTab(id); setMenuOpen(false) }}>
-                <GraduationCap className="tab-icon" size={20} strokeWidth={2} aria-hidden="true" />
-                <span className="tab-label">Child</span>
+              <TabButton id="practice" current={tab} onClick={(id)=>{ setTab(id); setMenuOpen(false) }}>
+                <BookOpen className="tab-icon" size={20} strokeWidth={2} aria-hidden="true" />
+                <span className="tab-label">Practice</span>
               </TabButton>
-              <TabButton id="parent" current={tab} onClick={(id)=>{ setTab(id); setMenuOpen(false) }}>
-                <Users className="tab-icon" size={20} strokeWidth={2} aria-hidden="true" />
-                <span className="tab-label">Parent</span>
-              </TabButton>
-              <TabButton id="train" current={tab} onClick={(id)=>{ setTab(id); setMenuOpen(false) }}>
+              <TabButton id="training" current={tab} onClick={(id)=>{ setTab(id); setMenuOpen(false) }}>
                 <Target className="tab-icon" size={20} strokeWidth={2} aria-hidden="true" />
-                <span className="tab-label">Train</span>
+                <span className="tab-label">Training</span>
               </TabButton>
-              <TabButton id="adult" current={tab} onClick={(id)=>{ setTab(id); setMenuOpen(false) }}>
-                <User className="tab-icon" size={20} strokeWidth={2} aria-hidden="true" />
-                <span className="tab-label">Adult</span>
+              <TabButton id="monitor" current={tab} onClick={(id)=>{ setTab(id); setMenuOpen(false) }}>
+                <BarChart3 className="tab-icon" size={20} strokeWidth={2} aria-hidden="true" />
+                <span className="tab-label">Monitor</span>
               </TabButton>
             </nav>
 
-            {/* Avatar Badge at Bottom */}
-            <div className="sidebar-actions" role="complementary" aria-label="User profile">
-              <User className="avatar-icon" size={20} strokeWidth={2} aria-hidden="true" />
-              <span className="avatar-label">
-                {avatar ? `${avatar.charAt(0).toUpperCase() + avatar.slice(1)}` : 'Guest'}
-              </span>
-            </div>
+            {/* Mode Toggle (only visible in Practice tab) - Moved here for better visibility */}
+            {tab === 'practice' && (
+              <div className="sidebar-toggle" role="complementary" aria-label="Practice mode">
+                <div className="toggle-header">Mode:</div>
+                <button 
+                  className={`mode-btn ${practiceMode === 'child' ? 'active' : ''}`}
+                  onClick={() => setPracticeMode('child')}
+                  aria-pressed={practiceMode === 'child'}
+                >
+                  <span className="mode-icon">👶</span>
+                  <span className="mode-label">Kids</span>
+                </button>
+                <button 
+                  className={`mode-btn ${practiceMode === 'adult' ? 'active' : ''}`}
+                  onClick={() => setPracticeMode('adult')}
+                  aria-pressed={practiceMode === 'adult'}
+                >
+                  <span className="mode-icon">👤</span>
+                  <span className="mode-label">Adults</span>
+                </button>
+              </div>
+            )}
           </div>
         </aside>
 
@@ -167,28 +181,28 @@ export default function App() {
           <AnimatePresence mode="wait">
             {tab === 'home' && (
               <motion.section key="home" className="view home-view" initial="enter" animate="center" exit="exit" variants={variants}>
-                <NewHome onStartChild={() => setTab('child')} onOpenParent={() => setTab('parent')} />
+                <NewHome 
+                  onStartChild={() => { setTab('practice'); setPracticeMode('child') }} 
+                  onOpenParent={() => setTab('monitor')} 
+                />
               </motion.section>
             )}
 
-            {tab === 'child' && (
-              <motion.div key="child" initial="enter" animate="center" exit="exit" variants={variants}>
-                <ChildHome />
+            {tab === 'practice' && (
+              <motion.div key="practice" initial="enter" animate="center" exit="exit" variants={variants}>
+                {practiceMode === 'child' ? <ChildHome /> : <AdultLearning />}
               </motion.div>
             )}
-            {tab === 'parent' && (
-              <motion.div key="parent" initial="enter" animate="center" exit="exit" variants={variants}>
-                <ParentDashboard />
-              </motion.div>
-            )}
-            {tab === 'train' && (
-              <motion.div key="train" initial="enter" animate="center" exit="exit" variants={variants}>
+            
+            {tab === 'training' && (
+              <motion.div key="training" initial="enter" animate="center" exit="exit" variants={variants}>
                 <TrainingMode />
               </motion.div>
             )}
-            {tab === 'adult' && (
-              <motion.div key="adult" initial="enter" animate="center" exit="exit" variants={variants}>
-                <AdultLearning />
+            
+            {tab === 'monitor' && (
+              <motion.div key="monitor" initial="enter" animate="center" exit="exit" variants={variants}>
+                <ParentDashboard />
               </motion.div>
             )}
           </AnimatePresence>

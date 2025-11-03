@@ -60,6 +60,7 @@ export default function TrainingMode() {
   
   const [target, setTarget] = useState('WAVE')
   const [recent, setRecent] = useState('')
+  const [cameraOn, setCameraOn] = useState(false)
   const [cameraReady, setCameraReady] = useState(false)
   const [cameraError, setCameraError] = useState(null)
   const [detectionFeedback, setDetectionFeedback] = useState(null)
@@ -403,96 +404,222 @@ export default function TrainingMode() {
 
   return (
     <section className="training-view" role="main" aria-labelledby="training-title">
-      {/* Header with Progress */}
-      <div className="training-header" role="banner">
-        <div className="training-title-row">
-          <h1 className="training-title" id="training-title">
-            <span aria-hidden="true">🎓</span>
-            Training Mode
-          </h1>
-          <div 
-            className="training-progress-badge"
-            role="status"
-            aria-label={`Progress: ${progress.done} out of ${progress.total} signs mastered`}
-          >
-            <span aria-hidden="true">⭐</span>
-            {progress.done} / {progress.total} Signs
+      {/* Main Split Layout - Camera Left, Controls Right */}
+      <div className="practice-split-layout">
+        {/* Left Side - Camera Feed */}
+        <div className="practice-camera-section">
+          <div className="practice-camera-card-mini">
+            {!cameraOn ? (
+              <div className="camera-placeholder">
+                <div className="camera-icon">📷</div>
+                <h2>Ready to Practice?</h2>
+                <p>Start your camera to begin practicing signs</p>
+                <button className="btn-start-practice" onClick={() => setCameraOn(true)}>
+                  Start Camera →
+                </button>
+              </div>
+            ) : (
+              <div className="camera-feed-active">
+                <div className="camera-controls-bar">
+                  <div className="camera-status">
+                    <div className="indicator-dot"></div>
+                    <span>{cameraReady ? 'Camera Active' : 'Loading Camera...'}</span>
+                  </div>
+                  {cameraError ? (
+                    <button className="btn-stop-camera" onClick={restartCamera}>
+                      Restart Camera
+                    </button>
+                  ) : (
+                    <button className="btn-stop-camera" onClick={() => setCameraOn(false)}>
+                      Stop Camera
+                    </button>
+                  )}
+                </div>
+                <div className="camera-video-container">
+                  <CameraPanel 
+                    ref={cameraRef}
+                    onSignDetected={handleSignDetected}
+                    onError={handleCameraError}
+                    onReady={handleCameraReady}
+                    targetSign={target}
+                    showUI={false}
+                    showSkeleton={true}
+                    showConfidence={true}
+                    showTargetOverlay={true}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        <div 
-          className="progress-bar-container"
-          role="progressbar"
-          aria-valuenow={progress.pct}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label={`Overall progress: ${progress.pct}% complete`}
-        >
-          <div className="progress-bar" style={{ width: `${progress.pct}%` }}></div>
-        </div>
-        <p className="progress-text" role="status" aria-live="polite">
-          {progress.pct === 0 && "Let's start learning! Choose a sign below."}
-          {progress.pct > 0 && progress.pct < 25 && `Great start! ${progress.done} signs learned.`}
-          {progress.pct >= 25 && progress.pct < 50 && `You're doing awesome! Keep going!`}
-          {progress.pct >= 50 && progress.pct < 75 && `Over halfway there! You're a star! 🌟`}
-          {progress.pct >= 75 && progress.pct < 100 && `Almost there! Just a few more!`}
-          {progress.pct === 100 && `🎉 Amazing! You've mastered all signs!`}
-        </p>
-      </div>
-
-      {/* Screen Reader Announcements for Sign Detection */}
-      <div 
-        role="status" 
-        aria-live="polite" 
-        aria-atomic="true"
-        className="sr-only"
-        style={{ position: 'absolute', left: '-10000px', width: '1px', height: '1px', overflow: 'hidden' }}
-      >
-        {recent && `Detected: ${FRIENDLY[recent] || recent}`}
-      </div>
-      
-      {/* Screen Reader Announcements for Mastery */}
-      <div 
-        role="alert" 
-        aria-live="assertive" 
-        aria-atomic="true"
-        className="sr-only"
-        style={{ position: 'absolute', left: '-10000px', width: '1px', height: '1px', overflow: 'hidden' }}
-      >
-        {currentSignStats.mastered && `Congratulations! You've mastered ${FRIENDLY[target] || target}!`}
-      </div>
-
-      {/* Main Content */}
-      <div className="training-content" role="complementary"  aria-label="Training controls and camera">
-        {/* Desktop Sign Selector Dropdown */}
-        <div className="training-card sign-selector-card desktop-only" role="region" aria-labelledby="current-sign-title">
-          <div className="training-card-header">
-            <span className="training-card-icon" aria-hidden="true">🎯</span>
-            <h2 className="training-card-title" id="current-sign-title">Current Sign</h2>
-          </div>
-
-          <div className="current-sign-display">
-            <div className="current-sign-label">Now Practicing</div>
-            <div className="current-sign-name">{FRIENDLY[target] || target}</div>
-            <div 
-              className={`current-sign-status ${currentSignStats.mastered ? 'learned' : 'learning'}`}
-              role="status"
-              aria-label={currentSignStats.mastered ? `${FRIENDLY[target]} is mastered` : `${FRIENDLY[target]} is in progress`}
-            >
-              <span aria-hidden="true">{currentSignStats.mastered ? '✓' : '○'}</span>
-              {currentSignStats.mastered ? 'Mastered!' : 'Keep Practicing'}
+        {/* Right Side - Controls and Recognition Mode */}
+        <div className="practice-controls-section">
+          {/* Camera Controls */}
+          <div className="media-controls-card">
+            <div className="media-toggle-buttons">
+              <button 
+                className={`media-toggle-btn ${cameraOn ? 'active' : ''}`}
+                onClick={() => setCameraOn(!cameraOn)}
+                title={cameraOn ? 'Turn off camera' : 'Turn on camera'}
+              >
+                <svg className="media-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  {cameraOn ? (
+                    <>
+                      <path d="M3 3L21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                      <path d="M7 7H4C3.44772 7 3 7.44772 3 8V16C3 16.5523 3.44772 17 4 17H16C16.5523 17 17 16.5523 17 16V13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M17 10.5V8C17 7.44772 16.5523 7 16 7H10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M17 10.5L21 7.5V16.5L17 13.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </>
+                  ) : (
+                    <>
+                      <path d="M3 8C3 7.44772 3.44772 7 4 7H16C16.5523 7 17 7.44772 17 8V16C17 16.5523 16.5523 17 16 17H4C3.44772 17 3 16.5523 3 16V8Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+                      <path d="M17 10.5L21 7.5V16.5L17 13.5V10.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </>
+                  )}
+                </svg>
+                <span className="media-label">Camera</span>
+              </button>
+              <button 
+                className="media-toggle-btn"
+                disabled
+                title="Microphone (coming soon)"
+              >
+                <svg className="media-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 1C10.3431 1 9 2.34315 9 4V12C9 13.6569 10.3431 15 12 15C13.6569 15 15 13.6569 15 12V4C15 2.34315 13.6569 1 12 1Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+                  <path d="M19 10V12C19 15.866 15.866 19 12 19M5 10V12C5 15.866 8.13401 19 12 19M12 19V23M8 23H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M3 3L21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+                <span className="media-label">Microphone</span>
+              </button>
             </div>
           </div>
 
-          <label className="sign-selector-label" htmlFor="sign-selector-dropdown">
-            Choose a different sign:
-          </label>
+          {/* Recognition Mode Card - Gestures Only - Only show when camera is on */}
+          {cameraOn && (
+            <div className="recognition-mode-card">
+              <h3>Recognition Mode</h3>
+              <div className="recognition-mode-pills-vertical">
+                <button className="mode-pill-large active">
+                  <span className="pill-icon">👋</span>
+                  <div className="pill-content">
+                    <span className="pill-title">Daily Gestures</span>
+                    <span className="pill-desc">Practice common hand signs</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Info Card when camera is off */}
+          {!cameraOn && (
+            <div className="home-info-card">
+              <h3>✨ Start Practicing</h3>
+              <p>Turn on your camera to begin practicing sign language with real-time feedback. Choose from {ALL_SIGNS.length} different signs to master!</p>
+            </div>
+          )}
+
+          {/* Current Sign Display - Only show when camera is on */}
+          {cameraOn && (
+            <div className="training-card sign-selector-card">
+            <div className="training-card-header">
+              <h3 className="training-card-title">Current Sign</h3>
+            </div>
+
+            <div className="current-sign-display">
+              <div className="current-sign-name">{FRIENDLY[target] || target}</div>
+              <div className={`current-sign-status ${currentSignStats.mastered ? 'learned' : 'learning'}`}>
+                <span>{currentSignStats.mastered ? '✓' : '○'}</span>
+                {currentSignStats.mastered ? 'Mastered!' : 'Keep Practicing'}
+              </div>
+            </div>
+
+            <div className="sign-hint">
+              <p className="sign-hint-text">
+                <strong>How to do it:</strong> {SIGN_DESCRIPTIONS[target] || 'Show the sign clearly to the camera.'}
+              </p>
+            </div>
+            
+            {/* Current Sign Progress */}
+            {currentSignStats.attempts > 0 && (
+              <div className="sign-progress-card">
+                <div className="sign-progress-stats">
+                  <div className="sign-progress-item">
+                    <span className="sign-progress-label">Progress:</span>
+                    <span className="sign-progress-value">
+                      {currentSignStats.successes}/5 {currentSignStats.mastered && '🎓'}
+                    </span>
+                  </div>
+                  <div className="sign-progress-item">
+                    <span className="sign-progress-label">Accuracy:</span>
+                    <span className="sign-progress-value">{currentSignStats.accuracy}%</span>
+                  </div>
+                </div>
+                {currentSignStats.mastered && (
+                  <div className="mastery-badge">✨ Mastered!</div>
+                )}
+              </div>
+            )}
+          </div>
+          )}
+
+          {/* Session Stats - Only show when camera is on */}
+          {cameraOn && (
+            <div className="training-card stats-card">
+            <div className="training-card-header">
+              <h3 className="training-card-title">Session Stats</h3>
+            </div>
+
+            <div className="stats-grid">
+              <div className="stat-item">
+                <div className="stat-value">{sessionAttempts}</div>
+                <div className="stat-label">Attempts</div>
+              </div>
+              <div className="stat-item">
+                <div className="stat-value">{sessionSuccesses}</div>
+                <div className="stat-label">Successful</div>
+              </div>
+              <div className="stat-item">
+                <div className="stat-value">
+                  {sessionAttempts > 0 ? Math.round((sessionSuccesses / sessionAttempts) * 100) : 0}%
+                </div>
+                <div className="stat-label">Accuracy</div>
+              </div>
+            </div>
+          </div>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom Section - Sign Selector and Progress */}
+      <div className="practice-bottom-section">
+        {/* Progress Card */}
+        <div className="practice-time-card">
+          <div className="practice-user-info">
+            <div className="practice-avatar-small">🎓</div>
+            <div>
+              <h3>Training Progress</h3>
+              <p>{progress.done} / {progress.total} signs mastered</p>
+            </div>
+          </div>
+          <div className="progress-inline-full">
+            <span className="progress-label">Overall Progress</span>
+            <div className="progress-wrapper">
+              <div className="progress-bar-full">
+                <div className="progress-fill-full" style={{ width: `${progress.pct}%` }}></div>
+              </div>
+              <span className="progress-value">{progress.pct}% ⭐</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Sign Selector Dropdown */}
+        <div className="practice-rewards-card-compact">
+          <h3>🎯 Select Sign</h3>
           <select 
             className="sign-selector-dropdown" 
-            id="sign-selector-dropdown"
             value={target} 
             onChange={e => setTarget(e.target.value)}
-            aria-label="Select a sign to practice"
           >
             {ALL_SIGNS.map(s => {
               const stats = signStats[s]
@@ -504,420 +631,33 @@ export default function TrainingMode() {
               )
             })}
           </select>
-
-          <div className="sign-hint" role="note" aria-label="Instructions for current sign">
-            <p className="sign-hint-text">
-              <strong>How to do it:</strong> {SIGN_DESCRIPTIONS[target] || 'Show the sign clearly to the camera.'}
-            </p>
-          </div>
-          
-          {/* Current Sign Progress */}
-          {currentSignStats.attempts > 0 && (
-            <div className="sign-progress-card">
-              <div className="sign-progress-stats">
-                <div className="sign-progress-item">
-                  <span className="sign-progress-label">Progress:</span>
-                  <span className="sign-progress-value">
-                    {currentSignStats.successes}/5 {currentSignStats.mastered && '🎓'}
-                  </span>
-                </div>
-                <div className="sign-progress-item">
-                  <span className="sign-progress-label">Accuracy:</span>
-                  <span className="sign-progress-value">{currentSignStats.accuracy}%</span>
-                </div>
-                {currentSignStats.lastPracticed && (
-                  <div className="sign-progress-item">
-                    <span className="sign-progress-label">Last practiced:</span>
-                    <span className="sign-progress-value">
-                      {new Date(currentSignStats.lastPracticed).toLocaleDateString()}
-                    </span>
-                  </div>
-                )}
-              </div>
-              {currentSignStats.mastered && (
-                <div className="mastery-badge">✨ Mastered!</div>
-              )}
-            </div>
-          )}
-
-          {recent && (
-            <div className="recent-detection">
-              <p className="recent-detection-text">Last detected:</p>
-              <p className="recent-detection-value">{FRIENDLY[recent] || recent}</p>
-            </div>
-          )}
         </div>
 
-        {/* Mobile Swipeable Sign Selector */}
-        <div className="training-card sign-swiper-card">
-          <div className="training-card-header">
-            <span className="training-card-icon">👆</span>
-            <h2 className="training-card-title">Swipe to Choose Sign</h2>
-          </div>
-
-          <div className="sign-swiper-container">
-            <Swiper
-              modules={[Pagination, Navigation]}
-              spaceBetween={20}
-              slidesPerView={1}
-              centeredSlides={true}
-              pagination={{ clickable: true }}
-              initialSlide={ALL_SIGNS.indexOf(target)}
-              onSwiper={setSwiperInstance}
-              onSlideChange={handleSwiperSlideChange}
-              breakpoints={{
-                640: {
-                  slidesPerView: 1.5,
-                  spaceBetween: 30
-                }
-              }}
-            >
-              {ALL_SIGNS.map((sign, index) => {
-                const stats = signStats[sign]
-                const isActive = sign === target
-                const masteryBadge = stats?.mastered 
-                  ? '🎓 Mastered' 
-                  : stats?.successes > 0 
-                    ? `${stats.successes}/5 to master`
-                    : 'Not started'
-                
-                return (
-                  <SwiperSlide key={sign}>
-                    <div 
-                      className={`sign-swiper-card-item ${isActive ? 'active' : ''} ${stats?.mastered ? 'mastered' : ''}`}
-                      onClick={() => setTarget(sign)}
-                    >
-                      <div className="sign-swiper-emoji">
-                        {sign === 'WAVE' && '👋'}
-                        {sign === 'SALUTE' && '🫡'}
-                        {sign === 'THUMBS_UP' && '👍'}
-                        {sign === 'THUMBS_DOWN' && '👎'}
-                        {sign === 'OK' && '👌'}
-                        {sign === 'PEACE' && '✌️'}
-                        {sign === 'STOP' && '✋'}
-                        {sign === 'POINT' && '☝️'}
-                        {sign === 'FIST_BUMP' && '👊'}
-                        {sign === 'HIGH_FIVE' && '🙌'}
-                        {sign === 'APPLAUSE' && '👏'}
-                        {sign === 'CROSSED_FINGERS' && '🤞'}
-                        {sign === 'COME_HERE' && '👈'}
-                        {sign === 'SHHH' && '🤫'}
-                        {sign === 'FACEPALM' && '🤦'}
-                        {sign === 'AIR_QUOTES' && '✌️'}
-                        {sign === 'HANDSHAKE' && '🤝'}
-                        {sign === 'MILK' && '✊'}
-                      </div>
-                      <div className="sign-swiper-name">{FRIENDLY[sign] || sign}</div>
-                      <div className={`sign-swiper-badge ${stats?.mastered ? 'mastered' : ''}`}>
-                        {masteryBadge}
-                      </div>
-                    </div>
-                  </SwiperSlide>
-                )
-              })}
-            </Swiper>
-          </div>
-
-          <div className="sign-hint">
-            <p className="sign-hint-text">
-              <strong>How to do it:</strong> {SIGN_DESCRIPTIONS[target] || 'Show the sign clearly to the camera.'}
-            </p>
-          </div>
-          
-          {/* Current Sign Progress - Mobile */}
-          {currentSignStats.attempts > 0 && (
-            <div className="sign-progress-card">
-              <div className="sign-progress-stats">
-                <div className="sign-progress-item">
-                  <span className="sign-progress-label">Progress:</span>
-                  <span className="sign-progress-value">
-                    {currentSignStats.successes}/5 {currentSignStats.mastered && '🎓'}
-                  </span>
-                </div>
-                <div className="sign-progress-item">
-                  <span className="sign-progress-label">Accuracy:</span>
-                  <span className="sign-progress-value">{currentSignStats.accuracy}%</span>
-                </div>
-                {currentSignStats.lastPracticed && (
-                  <div className="sign-progress-item">
-                    <span className="sign-progress-label">Last practiced:</span>
-                    <span className="sign-progress-value">
-                      {new Date(currentSignStats.lastPracticed).toLocaleDateString()}
-                    </span>
-                  </div>
-                )}
-              </div>
-              {currentSignStats.mastered && (
-                <div className="mastery-badge">✨ Mastered!</div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Practice Stats - Session Only */}
-        <div className="training-card stats-card">
-          <div className="training-card-header">
-            <span className="training-card-icon">📊</span>
-            <h2 className="training-card-title">Session Stats</h2>
-          </div>
-
-          <div className="stats-grid">
-            <div className="stat-item">
-              <div className="stat-value">{sessionAttempts}</div>
-              <div className="stat-label">Total Attempts</div>
-            </div>
-            <div className="stat-item">
-              <div className="stat-value">{sessionSuccesses}</div>
-              <div className="stat-label">Successful</div>
-            </div>
-            <div className="stat-item">
-              <div className="stat-value">
-                {sessionAttempts > 0 ? Math.round((sessionSuccesses / sessionAttempts) * 100) : 0}%
-              </div>
-              <div className="stat-label">Accuracy</div>
-            </div>
-          </div>
-
-          {consecutiveFailures >= 2 && (
-            <div className="hint-banner">
-              <p>💡 <strong>Tip:</strong> {SIGN_DESCRIPTIONS[target] || 'Check the description above'}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Calibration Settings */}
-        <div className={`training-card calibration-card ${calibrationStatus === 'success' ? 'calibration-success' : ''} ${calibrationStatus === 'error' ? 'calibration-error' : ''}`}>
-          <div className="training-card-header">
-            <span className="training-card-icon">⚙️</span>
-            <h2 className="training-card-title">Settings</h2>
-            {calibrationStatus === 'success' && <span className="calibration-badge success">✓ Calibrated</span>}
-            {calibrationStatus === 'error' && <span className="calibration-badge error">✗ Error</span>}
-            {calibrationStatus === 'no-hand' && <span className="calibration-badge warning">⚠ No Hand</span>}
-          </div>
-
-          <div className="calibration-status">
-            <span className="calibration-label">Upright Offset</span>
-            <span className={`calibration-value ${isCalibrating ? 'calibrating' : ''}`}>
-              {isCalibrating ? '...' : `${uprightOffsetDeg}°`}
-            </span>
-          </div>
-
-          <div className="calibration-actions">
+        {/* Calibration Card */}
+        <div className="practice-character-card-compact">
+          <h3>⚙️ Settings</h3>
+          <div className="calibration-actions-compact">
             <button 
-              className="btn-secondary" 
+              className="btn-secondary-compact" 
               onClick={calibrateUpright}
               disabled={isCalibrating || !cameraReady}
             >
-              {isCalibrating ? (
-                <>
-                  <span className="spinner"></span>
-                  Calibrating...
-                </>
-              ) : (
-                <>
-                  <span>📐</span>
-                  Calibrate Upright
-                </>
-              )}
+              {isCalibrating ? 'Calibrating...' : '📐 Calibrate'}
             </button>
             <button 
-              className="btn-secondary" 
+              className="btn-secondary-compact" 
               onClick={resetCalibration}
               disabled={isCalibrating}
             >
-              {isCalibrating ? (
-                <>
-                  <span className="spinner"></span>
-                  Resetting...
-                </>
-              ) : (
-                <>
-                  <span>🔄</span>
-                  Reset Calibration
-                </>
-              )}
+              🔄 Reset
             </button>
           </div>
-
-          <div className="calibration-info">
-            <p className="calibration-info-text">
-              <strong>💡 How to calibrate:</strong> Hold your hand upright (fingers pointing up) in front of the camera, then click "Calibrate Upright". This helps improve sign detection accuracy.
-            </p>
-            {!cameraReady && (
-              <p className="calibration-warning">
-                ⏳ Waiting for camera to be ready...
-              </p>
-            )}
+          <div className="calibration-status-compact">
+            Offset: {uprightOffsetDeg}°
           </div>
-        </div>
-
-        {/* Milestones Checklist */}
-        <div className="training-card checklist-card">
-          <div className="training-card-header">
-            <span className="training-card-icon">📋</span>
-            <h2 className="training-card-title">Milestones</h2>
-          </div>
-
-          <ul className="checklist-items">
-            {milestones.map((milestone, i) => (
-              <li key={i} className={`checklist-item ${milestone.completed ? 'completed' : ''}`}>
-                <span className="checklist-icon">{milestone.completed ? '✅' : '⭕'}</span>
-                <p className="checklist-text">{milestone.label}</p>
-              </li>
-            ))}
-          </ul>
         </div>
       </div>
 
-      {/* Camera Panel */}
-      <div 
-        ref={cameraSectionRef}
-        className={`training-card camera-section ${detectionFeedback === 'correct' ? 'detected-correct' : ''} ${detectionFeedback === 'incorrect' ? 'detected-incorrect' : ''} ${isFullscreen ? 'fullscreen-mode' : ''}`}
-      >
-        {isFullscreen && (
-          <div className="fullscreen-overlay">
-            <button 
-              className="fullscreen-exit-button"
-              onClick={exitFullscreen}
-              aria-label="Exit fullscreen"
-            >
-              <span>✕</span>
-              Exit Fullscreen
-            </button>
-            <div className="fullscreen-sign-display">
-              {FRIENDLY[target] || target}
-            </div>
-          </div>
-        )}
-
-        <div className="camera-header">
-          <h2 className="camera-title">
-            <span>📹</span>
-            Live Practice
-          </h2>
-          <div className="camera-live-badge">
-            <span className="live-dot"></span>
-            {cameraReady ? 'LIVE' : 'LOADING'}
-          </div>
-        </div>
-        
-        {cameraError && (
-          <div style={{ marginBottom: '1rem' }}>
-            <button 
-              className="btn-primary" 
-              onClick={restartCamera}
-              style={{ width: '100%' }}
-            >
-              🔄 Restart Camera
-            </button>
-          </div>
-        )}
-        
-        <CameraPanel 
-          ref={cameraRef}
-          onSignDetected={handleSignDetected}
-          onError={handleCameraError}
-          onReady={handleCameraReady}
-          targetSign={target}
-          showUI={false}
-          showSkeleton={true}
-          showConfidence={true}
-          showTargetOverlay={true}
-        />
-        
-        {/* Camera Controls */}
-        {cameraReady && !cameraError && (
-          <div className="camera-controls" role="group" aria-label="Camera controls">
-            <button 
-              className="fullscreen-button"
-              onClick={enterFullscreen}
-              title="Practice in fullscreen mode"
-              aria-label="Enter fullscreen mode for immersive practice"
-            >
-              <span aria-hidden="true">⛶</span>
-              Fullscreen Mode
-            </button>
-            <button 
-              className="btn-secondary camera-control-btn"
-              onClick={restartCamera}
-              title="Restart camera"
-              aria-label="Restart camera if detection is not working"
-            >
-              <span aria-hidden="true">🔄</span>
-              Restart Camera
-            </button>
-            <button 
-              className="btn-secondary camera-control-btn"
-              onClick={calibrateUpright}
-              disabled={isCalibrating}
-              title="Calibrate hand detection"
-              aria-label={isCalibrating ? "Calibrating hand detection, please wait" : "Calibrate hand detection for better accuracy"}
-            >
-              {isCalibrating ? (
-                <>
-                  <span className="spinner"></span>
-                  Calibrating...
-                </>
-              ) : (
-                <>
-                  <span>📐</span>
-                  Quick Calibrate
-                </>
-              )}
-            </button>
-          </div>
-        )}
-        
-        {detectionFeedback === 'correct' && (
-          <div 
-            className="detection-overlay success" 
-            role="alert" 
-            aria-live="assertive"
-            aria-label="Correct sign detected"
-          >
-            <div className="detection-message">
-              <span aria-hidden="true">✅</span> Perfect! Keep going!
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Sign Grid */}
-      <div className="training-card sign-grid-card" role="region" aria-labelledby="sign-grid-title">
-        <div className="training-card-header">
-          <span className="training-card-icon" aria-hidden="true">🎨</span>
-          <h2 className="training-card-title" id="sign-grid-title">All Signs ({progress.done}/{progress.total})</h2>
-        </div>
-
-        <div 
-          className="sign-grid" 
-          role="grid" 
-          aria-label="Grid of all available signs to practice"
-        >
-          {ALL_SIGNS.map((sign, index) => {
-            const signMastered = signStats[sign]?.mastered || false
-            return (
-              <div
-                key={sign}
-                className={`sign-grid-item ${signMastered ? 'learned' : ''} ${sign === target ? 'active' : ''}`}
-                onClick={() => setTarget(sign)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault()
-                    setTarget(sign)
-                  }
-                }}
-                role="button"
-                tabIndex={0}
-                aria-label={`${FRIENDLY[sign] || sign}${signMastered ? ', mastered' : ''}${sign === target ? ', currently selected' : ''}`}
-                aria-pressed={sign === target}
-              >
-                <p className="sign-grid-name">{FRIENDLY[sign] || sign}</p>
-              </div>
-            )
-          })}
-        </div>
-      </div>
     </section>
   )
 }

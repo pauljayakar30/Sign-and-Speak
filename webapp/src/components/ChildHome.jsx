@@ -5,6 +5,7 @@
  */
 import React, { useState } from 'react'
 import CameraPanel from './CameraPanel.jsx'
+import RecognitionModeSelector from './RecognitionModeSelector.jsx'
 import GoalRing from './GoalRing.jsx'
 import StickerBook from './StickerBook.jsx'
 import CharacterPicker from './CharacterPicker.jsx'
@@ -14,6 +15,7 @@ export default function ChildHome() {
   const [code, setCode] = useState('')
   const [status, setStatus] = useState('')
   const [cameraOn, setCameraOn] = useState(false)
+  const [recognitionMode, setRecognitionMode] = useState('gestures')
   
   // Use context instead of local state and window events
   const { avatar, updateAvatar } = useAvatar()
@@ -46,143 +48,171 @@ export default function ChildHome() {
   const starsLeft = Math.max(0, DAILY_GOAL - stars)
 
   return (
-    <section className="child-view">
-      {/* Hero Section */}
-      <div className="child-hero">
-        <div className="child-hero-content">
-          <div className="child-greeting">
-            <div className="child-avatar-lg">{avatarEmoji}</div>
-            <div>
-              <h1 className="child-title">Let's Learn Signs!</h1>
-              <p className="child-subtitle">Practice and earn stars for your sticker collection</p>
-            </div>
-          </div>
-          
-          <div className="child-stats-row">
-            <div className="child-stat-card primary">
-              <div className="stat-icon">⭐</div>
-              <div className="stat-content">
-                <div className="stat-value">{stars}</div>
-                <div className="stat-label">Stars Today</div>
-              </div>
-            </div>
-            <div className="child-stat-card secondary">
-              <div className="stat-icon">🎯</div>
-              <div className="stat-content">
-                <div className="stat-value">{progress}%</div>
-                <div className="stat-label">Daily Goal</div>
-              </div>
-            </div>
-            <div className="child-stat-card accent">
-              <div className="stat-icon">🎨</div>
-              <div className="stat-content">
-                <div className="stat-value">{Math.floor(stars / 2)}</div>
-                <div className="stat-label">Stickers</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="child-content">
-        {/* Practice Card */}
-        <div className="child-card practice-card">
-          <div className="card-header">
-            <h2>🎮 Practice Zone</h2>
-            <p className="card-subtitle">Show me a sign to earn stars!</p>
-          </div>
-          
-          <div className="practice-actions">
+    <section className="child-practice-view">
+      {/* Main Split Layout - Camera Left, Controls Right */}
+      <div className="practice-split-layout">
+        {/* Left Side - Camera Feed */}
+        <div className="practice-camera-section">
+          <div className="practice-camera-card-mini">
             {!cameraOn ? (
-              <button className="btn-primary large pulse-btn" onClick={() => setCameraOn(true)}>
-                <span className="btn-icon">📸</span>
-                Start Adventure
-              </button>
+              <div className="camera-placeholder">
+                <h2>Ready to Practice?</h2>
+                <p>Start your camera to begin learning signs</p>
+                <button className="btn-start-practice" onClick={() => setCameraOn(true)}>
+                  Start Practice →
+                </button>
+              </div>
             ) : (
-              <button className="btn-secondary large" onClick={() => setCameraOn(false)}>
-                <span className="btn-icon">⏸️</span>
-                Stop Camera
-              </button>
+              <div className="camera-feed-active">
+                <div className="camera-controls-bar">
+                  <div className="camera-status">
+                    <div className="indicator-dot"></div>
+                    <span>Camera Active</span>
+                  </div>
+                  <button className="btn-stop-camera" onClick={() => setCameraOn(false)}>
+                    Stop Camera
+                  </button>
+                </div>
+                <div className="camera-video-container">
+                  <CameraPanel 
+                    showUI={false}
+                    recognitionMode={recognitionMode}
+                  />
+                </div>
+              </div>
             )}
           </div>
-
-          {starsLeft > 0 && (
-            <div className="encouragement-box">
-              <span className="encouragement-emoji">💪</span>
-              <p>Only <strong>{starsLeft} more stars</strong> to complete today's goal!</p>
-            </div>
-          )}
-
-          {stars >= DAILY_GOAL && (
-            <div className="success-box">
-              <span className="success-emoji">🎉</span>
-              <p><strong>Amazing!</strong> You've completed today's goal!</p>
-            </div>
-          )}
         </div>
 
-        {/* Goal Progress Card */}
-        <div className="child-card goal-card">
-          <div className="card-header">
-            <h2>🎯 Today's Goal</h2>
+        {/* Right Side - Controls and Recognition Mode */}
+        <div className="practice-controls-section">
+          {/* Camera & Microphone Controls */}
+          <div className="media-controls-card">
+            <div className="media-toggle-buttons">
+              <button 
+                className={`media-toggle-btn ${cameraOn ? 'active' : ''}`}
+                onClick={() => setCameraOn(!cameraOn)}
+                title={cameraOn ? 'Turn off camera' : 'Turn on camera'}
+              >
+                <svg className="media-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  {cameraOn ? (
+                    // Camera Off Icon
+                    <>
+                      <path d="M3 3L21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                      <path d="M7 7H4C3.44772 7 3 7.44772 3 8V16C3 16.5523 3.44772 17 4 17H16C16.5523 17 17 16.5523 17 16V13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M17 10.5V8C17 7.44772 16.5523 7 16 7H10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M17 10.5L21 7.5V16.5L17 13.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </>
+                  ) : (
+                    // Camera On Icon
+                    <>
+                      <path d="M3 8C3 7.44772 3.44772 7 4 7H16C16.5523 7 17 7.44772 17 8V16C17 16.5523 16.5523 17 16 17H4C3.44772 17 3 16.5523 3 16V8Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+                      <path d="M17 10.5L21 7.5V16.5L17 13.5V10.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </>
+                  )}
+                </svg>
+                <span className="media-label">Camera</span>
+              </button>
+              <button 
+                className="media-toggle-btn"
+                disabled
+                title="Microphone (coming soon)"
+              >
+                <svg className="media-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 1C10.3431 1 9 2.34315 9 4V12C9 13.6569 10.3431 15 12 15C13.6569 15 15 13.6569 15 12V4C15 2.34315 13.6569 1 12 1Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+                  <path d="M19 10V12C19 15.866 15.866 19 12 19M5 10V12C5 15.866 8.13401 19 12 19M12 19V23M8 23H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M3 3L21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+                <span className="media-label">Microphone</span>
+              </button>
+            </div>
           </div>
-          
-          <div className="goal-visual">
-            <GoalRing value={stars} goal={DAILY_GOAL} size={120} stroke={12} />
-            <div className="goal-details">
-              <div className="goal-message">
-                {stars === 0 && <p>Let's get started! 🚀</p>}
-                {stars > 0 && stars < DAILY_GOAL / 2 && <p>Great start! Keep going! 💫</p>}
-                {stars >= DAILY_GOAL / 2 && stars < DAILY_GOAL && <p>You're halfway there! 🌟</p>}
-                {stars >= DAILY_GOAL && <p>Goal complete! You're a star! ⭐</p>}
+
+          {/* Recognition Mode Selector - Only show when camera is on */}
+          {cameraOn && (
+            <div className="recognition-mode-card">
+              <h3>Recognition Mode</h3>
+              <div className="recognition-mode-pills-vertical">
+                <button 
+                  className={`mode-pill-large ${recognitionMode === 'gestures' ? 'active' : ''}`}
+                  onClick={() => setRecognitionMode('gestures')}
+                >
+                  <span className="pill-icon">👋</span>
+                  <div className="pill-content">
+                    <span className="pill-title">Daily Gestures</span>
+                    <span className="pill-desc">Thumbs up, peace, OK, etc.</span>
+                  </div>
+                </button>
+                <button 
+                  className={`mode-pill-large ${recognitionMode === 'isl' ? 'active' : ''}`}
+                  onClick={() => setRecognitionMode('isl')}
+                >
+                  <span className="pill-icon">🇮🇳</span>
+                  <div className="pill-content">
+                    <span className="pill-title">Indian Sign Language</span>
+                    <span className="pill-desc">ISL alphabet (A-Z)</span>
+                  </div>
+                </button>
+                <button 
+                  className={`mode-pill-large ${recognitionMode === 'asl' ? 'active' : ''}`}
+                  onClick={() => setRecognitionMode('asl')}
+                  disabled
+                >
+                  <span className="pill-icon">🇺🇸</span>
+                  <div className="pill-content">
+                    <span className="pill-title">American Sign Language</span>
+                    <span className="pill-desc">Coming Soon</span>
+                  </div>
+                </button>
               </div>
             </div>
+          )}
+
+          {/* Motivation Messages */}
+          {cameraOn && starsLeft > 0 && starsLeft <= 5 && (
+            <div className="practice-motivation">
+              <span className="motivation-icon">⭐</span>
+              <p>Almost there! <strong>{starsLeft} more</strong> to reach your goal!</p>
+            </div>
+          )}
+
+        </div>
+      </div>
+      
+      {/* Bottom Section - Practice Time, Rewards and Options */}
+      <div className="practice-bottom-section">
+        {/* Practice Time Info */}
+        <div className="practice-time-card">
+          <div className="practice-user-info">
+            <div className="practice-avatar-small">{avatarEmoji}</div>
+            <div>
+              <h3>Practice Time!</h3>
+              <p>Show signs to earn rewards</p>
+            </div>
+          </div>
+          <div className="progress-inline-full">
+            <span className="progress-label">Daily Goal</span>
+            <div className="progress-wrapper">
+              <div className="progress-bar-full">
+                <div className="progress-fill-full" style={{ width: `${progress}%` }}></div>
+              </div>
+              <span className="progress-value">{stars} / {DAILY_GOAL} ⭐</span>
+            </div>
           </div>
         </div>
 
-        {/* Sticker Collection */}
-        <div className="child-card stickers-card">
-          <div className="card-header">
-            <h2>🎨 Sticker Collection</h2>
-            <p className="card-subtitle">Unlock stickers as you earn stars!</p>
-          </div>
+        {/* Sticker Rewards */}
+        <div className="practice-rewards-card-compact">
+          <h3>🎨 Your Stickers</h3>
           <StickerBook stars={stars} max={DAILY_GOAL} />
         </div>
 
         {/* Character Selection */}
-        <div className="child-card character-card">
-          <div className="card-header">
-            <h2>✨ Choose Your Friend</h2>
-            <p className="card-subtitle">Pick your learning buddy</p>
-          </div>
+        <div className="practice-character-card-compact">
+          <h3>✨ Your Buddy</h3>
           <CharacterPicker value={avatar} onChange={chooseAvatar} />
         </div>
-
-        {/* Parent Connection */}
-        <details className="child-card settings-card">
-          <summary className="settings-header">
-            <h3>⚙️ Parent Connection</h3>
-          </summary>
-          <div className="settings-content">
-            <p className="settings-description">Ask your parent for the connection code</p>
-            <div className="connection-row">
-              <input 
-                type="text" 
-                value={code} 
-                onChange={e => setCode(e.target.value)} 
-                placeholder="Enter code..." 
-                className="connection-input"
-              />
-              <button className="btn-secondary" onClick={join}>Connect</button>
-            </div>
-            {status && <div className="connection-status">{status}</div>}
-          </div>
-        </details>
       </div>
-
-      {/* Camera Panel Overlay */}
-      {cameraOn && <CameraPanel />}
     </section>
   )
 }

@@ -191,7 +191,8 @@ const CameraPanel = forwardRef(function CameraPanel(props, ref) {
     autoStart = true,
     showSkeleton = true,
     showConfidence = true,
-    showTargetOverlay = true
+    showTargetOverlay = true,
+    recognitionMode: externalRecognitionMode = null
   } = props
 
   const videoRef = useRef(null)
@@ -218,20 +219,28 @@ const CameraPanel = forwardRef(function CameraPanel(props, ref) {
   const [lastDetectedSign, setLastDetectedSign] = useState(null)
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false)
 
-  // NEW: Recognition mode state
-  const [recognitionMode, setRecognitionModeInternal] = useState('gestures') // 'isl', 'asl', 'gestures', 'custom'
-  const recognitionModeRef = useRef('gestures') // Ref to avoid stale closure
+  // NEW: Recognition mode state (controlled or uncontrolled)
+  const [internalRecognitionMode, setInternalRecognitionMode] = useState('gestures')
+  const recognitionMode = externalRecognitionMode !== null ? externalRecognitionMode : internalRecognitionMode
+  const recognitionModeRef = useRef(recognitionMode) // Ref to avoid stale closure
   const [mlApiStatus, setMlApiStatus] = useState({ online: false, checking: true })
   const [mlPrediction, setMlPrediction] = useState(null)
   const [predictionHistory, setPredictionHistory] = useState([])
   
-  // Wrapper for setRecognitionMode with logging
+  // Sync ref when mode changes
+  React.useEffect(() => {
+    recognitionModeRef.current = recognitionMode
+    console.log('🔄 Recognition mode synced to ref:', recognitionMode)
+  }, [recognitionMode])
+  
+  // Wrapper for setRecognitionMode with logging (only used if not externally controlled)
   const setRecognitionMode = (mode) => {
-    console.log('🔄 setRecognitionMode called with:', mode)
-    console.log('📍 Previous mode:', recognitionMode)
-    recognitionModeRef.current = mode // Update ref immediately
-    setRecognitionModeInternal(mode)
-    console.log('✅ Mode state updated to:', mode)
+    if (externalRecognitionMode === null) {
+      console.log('🔄 setRecognitionMode called with:', mode)
+      console.log('📍 Previous mode:', recognitionMode)
+      setInternalRecognitionMode(mode)
+      console.log('✅ Mode state updated to:', mode)
+    }
   }
   
   // Throttling for ML predictions
@@ -1201,7 +1210,7 @@ const CameraPanel = forwardRef(function CameraPanel(props, ref) {
           }
         }
         
-        // Step 5: Initialize Camera with error handling
+        // Step 5: Initialize Camera with error handling and optimized settings
         try {
           camera = new Camera(videoRef.current, {
             onFrame: async () => {
@@ -1223,8 +1232,11 @@ const CameraPanel = forwardRef(function CameraPanel(props, ref) {
                 // Don't throw here, just log - single frame failures are acceptable
               }
             },
-            width: 640,
-            height: 480
+            // Optimized settings for reduced latency
+            width: 1280,  // Higher resolution for better quality
+            height: 720,
+            facingMode: 'user',  // Front camera
+            frameRate: 30  // 30 FPS for smooth experience
           })
           
           await camera.start()
@@ -1349,128 +1361,132 @@ const CameraPanel = forwardRef(function CameraPanel(props, ref) {
 
   return (
     <div className={`camera-panel ${detectionStatus === 'correct' ? 'detection-correct' : detectionStatus === 'incorrect' ? 'detection-incorrect' : ''}`}>
-      {/* Recognition Mode Selector */}
-      <RecognitionModeSelector
-        selectedMode={recognitionMode}
-        onModeChange={setRecognitionMode}
-        mlApiStatus={mlApiStatus}
-      />
-      
-      {/* Current Mode Banner */}
-      <div style={{
-        padding: '0.75rem 1rem',
-        background: recognitionMode === 'isl' ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' : 
-                   recognitionMode === 'gestures' ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)' :
-                   'linear-gradient(135deg, #6B7280 0%, #4B5563 100%)',
-        color: 'white',
-        borderRadius: '8px',
-        marginBottom: '1rem',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        fontSize: '0.875rem',
-        fontWeight: '600',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ fontSize: '1.25rem' }}>
-            {recognitionMode === 'isl' ? '🇮🇳' : 
-             recognitionMode === 'gestures' ? '👋' :
-             recognitionMode === 'asl' ? '🇺🇸' : '✨'}
-          </span>
-          <span>
-            ACTIVE MODE: {recognitionMode === 'isl' ? 'Indian Sign Language (ISL)' : 
-                         recognitionMode === 'gestures' ? 'Daily Gestures' :
-                         recognitionMode === 'asl' ? 'American Sign Language' : 'Custom Signs'}
-          </span>
-        </div>
-        <div style={{ 
-          padding: '0.25rem 0.75rem', 
-          background: 'rgba(255, 255, 255, 0.2)',
-          borderRadius: '12px',
-          fontSize: '0.75rem'
-        }}>
-          {recognitionMode === 'isl' ? '🤖 ML-Powered' : 
-           recognitionMode === 'gestures' ? '📐 Rule-Based' : 'Custom'}
-        </div>
-      </div>
-      
-      {/* ML Prediction Display */}
-      {mlPrediction && recognitionMode !== 'gestures' && (
-        <div className="ml-prediction-display" style={{
-          padding: '1rem',
-          background: 'rgba(99, 102, 241, 0.1)',
-          borderRadius: '12px',
-          marginBottom: '1rem',
-          border: '2px solid rgba(99, 102, 241, 0.3)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ fontSize: '3rem' }}>
-              {mlPrediction.mode === 'isl' ? '🤟' : '✋'}
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ 
-                fontSize: '1.5rem', 
-                fontWeight: 'bold',
-                color: 'var(--text-primary, #1F2937)'
-              }}>
-                {mlPrediction.sign}
-              </div>
-              <div style={{ 
-                fontSize: '0.875rem',
-                color: 'var(--text-muted, #6B7280)',
-                marginTop: '0.25rem'
-              }}>
-                Confidence: {(mlPrediction.confidence * 100).toFixed(1)}%
-              </div>
-              {mlPrediction.allPredictions && mlPrediction.allPredictions.length > 0 && (
-                <div style={{ 
-                  fontSize: '0.75rem',
-                  color: 'var(--text-muted, #6B7280)',
-                  marginTop: '0.5rem'
-                }}>
-                  Top 3: {mlPrediction.allPredictions.map(p => `${p.label} (${(p.confidence * 100).toFixed(0)}%)`).join(', ')}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Prediction History */}
-      {predictionHistory.length > 0 && recognitionMode !== 'gestures' && (
-        <div className="prediction-history" style={{
-          padding: '0.75rem',
-          background: 'rgba(0, 0, 0, 0.02)',
-          borderRadius: '8px',
-          marginBottom: '1rem'
-        }}>
-          <div style={{ 
-            fontSize: '0.75rem',
+      {/* Recognition Mode Selector - Only show when showUI is true */}
+      {showUI && (
+        <>
+          <RecognitionModeSelector
+            selectedMode={recognitionMode}
+            onModeChange={setRecognitionMode}
+            mlApiStatus={mlApiStatus}
+          />
+          
+          {/* Current Mode Banner */}
+          <div style={{
+            padding: '0.75rem 1rem',
+            background: recognitionMode === 'isl' ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' : 
+                       recognitionMode === 'gestures' ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)' :
+                       'linear-gradient(135deg, #6B7280 0%, #4B5563 100%)',
+            color: 'white',
+            borderRadius: '8px',
+            marginBottom: '1rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontSize: '0.875rem',
             fontWeight: '600',
-            marginBottom: '0.5rem',
-            color: 'var(--text-muted, #6B7280)'
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
           }}>
-            Recent Predictions:
-          </div>
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            {predictionHistory.slice(0, 5).map((pred, i) => (
-              <span 
-                key={i}
-                style={{
-                  padding: '0.25rem 0.75rem',
-                  background: 'white',
-                  borderRadius: '12px',
-                  fontSize: '0.75rem',
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                  opacity: 1 - (i * 0.15)
-                }}
-              >
-                {pred.sign}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '1.25rem' }}>
+                {recognitionMode === 'isl' ? '🇮🇳' : 
+                 recognitionMode === 'gestures' ? '👋' :
+                 recognitionMode === 'asl' ? '🇺🇸' : '✨'}
               </span>
-            ))}
+              <span>
+                ACTIVE MODE: {recognitionMode === 'isl' ? 'Indian Sign Language (ISL)' : 
+                             recognitionMode === 'gestures' ? 'Daily Gestures' :
+                             recognitionMode === 'asl' ? 'American Sign Language' : 'Custom Signs'}
+              </span>
+            </div>
+            <div style={{ 
+              padding: '0.25rem 0.75rem', 
+              background: 'rgba(255, 255, 255, 0.2)',
+              borderRadius: '12px',
+              fontSize: '0.75rem'
+            }}>
+              {recognitionMode === 'isl' ? '🤖 ML-Powered' : 
+               recognitionMode === 'gestures' ? '📐 Rule-Based' : 'Custom'}
+            </div>
           </div>
-        </div>
+          
+          {/* ML Prediction Display */}
+          {mlPrediction && recognitionMode !== 'gestures' && (
+            <div className="ml-prediction-display" style={{
+              padding: '1rem',
+              background: 'rgba(99, 102, 241, 0.1)',
+              borderRadius: '12px',
+              marginBottom: '1rem',
+              border: '2px solid rgba(99, 102, 241, 0.3)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ fontSize: '3rem' }}>
+                  {mlPrediction.mode === 'isl' ? '🤟' : '✋'}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ 
+                    fontSize: '1.5rem', 
+                    fontWeight: 'bold',
+                    color: 'var(--text-primary, #1F2937)'
+                  }}>
+                    {mlPrediction.sign}
+                  </div>
+                  <div style={{ 
+                    fontSize: '0.875rem',
+                    color: 'var(--text-muted, #6B7280)',
+                    marginTop: '0.25rem'
+                  }}>
+                    Confidence: {(mlPrediction.confidence * 100).toFixed(1)}%
+                  </div>
+                  {mlPrediction.allPredictions && mlPrediction.allPredictions.length > 0 && (
+                    <div style={{ 
+                      fontSize: '0.75rem',
+                      color: 'var(--text-muted, #6B7280)',
+                      marginTop: '0.5rem'
+                    }}>
+                      Top 3: {mlPrediction.allPredictions.map(p => `${p.label} (${(p.confidence * 100).toFixed(0)}%)`).join(', ')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Prediction History */}
+          {predictionHistory.length > 0 && recognitionMode !== 'gestures' && (
+            <div className="prediction-history" style={{
+              padding: '0.75rem',
+              background: 'rgba(0, 0, 0, 0.02)',
+              borderRadius: '8px',
+              marginBottom: '1rem'
+            }}>
+              <div style={{ 
+                fontSize: '0.75rem',
+                fontWeight: '600',
+                marginBottom: '0.5rem',
+                color: 'var(--text-muted, #6B7280)'
+              }}>
+                Recent Predictions:
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                {predictionHistory.slice(0, 5).map((pred, i) => (
+                  <span 
+                    key={i}
+                    style={{
+                      padding: '0.25rem 0.75rem',
+                      background: 'white',
+                      borderRadius: '12px',
+                      fontSize: '0.75rem',
+                      border: '1px solid rgba(0, 0, 0, 0.1)',
+                      opacity: 1 - (i * 0.15)
+                    }}
+                  >
+                    {pred.sign}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
       
       {/* Comprehensive Error State with Instructions */}
